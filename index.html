@@ -1,146 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZAYA | Women's Pret & Couture</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ZAYA | Women's Pret & Couture</title>
+<link rel="stylesheet" href="css/style.css" />
+<!-- Supabase CDN (Optional, graceful fallback included) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+<!-- Top Announcement Bar -->
 <div class="top-bar">
-  Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
+Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
 </div>
 
+<!-- Header with Lucide Icons (Bag -> Profile -> 3 Lines) -->
 <header class="header">
-  <div class="brand-logo" onclick="window.location.href='/'">ZAYA</div>
-  <div class="header-actions-right">
-    <button class="header-icon-btn" onclick="toggleBagDrawer(true)" aria-label="Shopping Bag">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      <span class="bag-badge-pill" id="headerBagCount">0</span>
-    </button>
-    <button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="Menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-    </button>
-  </div>
+<div class="brand-logo" onclick="window.location.href='index.html'">ZAYA</div>
+
+<div class="header-actions-right">
+<!-- 1. Bag Icon -->
+<button class="header-icon-btn" id="openBagTrigger" aria-label="Open Bag">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+</svg>
+<span class="bag-badge-pill" id="headerBagCount">0</span>
+</button>
+
+<!-- 2. Profile Icon -->
+<button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="Profile">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+</svg>
+</button>
+
+<!-- 3. Three Lines Menu -->
+<button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="Menu">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+</svg>
+</button>
+</div>
 </header>
 
-<!-- Mobile Sidebar -->
+<!-- Mobile Sidebar Drawer -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 <aside class="mobile-sidebar" id="mobileSidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-brand">ZAYA</div>
-    <button class="header-icon-btn" onclick="toggleSidebar(false)">&times;</button>
-  </div>
-  <div class="sidebar-content">
-    <div class="sidebar-group-title">Shop by Category</div>
-    <ul class="sidebar-menu-list">
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('All')">All Pieces</a></li>
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Kurtas')">Kurtas & Sets</a></li>
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Dresses')">Western Dresses</a></li>
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Co-ords')">Co-ord Sets</a></li>
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Sarees')">Pure Silk & Sarees</a></li>
-    </ul>
-    <div class="sidebar-group-title">Quick Links</div>
-    <ul class="sidebar-menu-list">
-      <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openTrackModal()">Track Order</a></li>
-      <li><a href="admin.html" class="sidebar-menu-link">Admin Portal</a></li>
-      <li><a href="auth.html" id="authSideLink" class="sidebar-menu-link">Sign In / Sign Up</a></li>
-    </ul>
-  </div>
+<div class="sidebar-header">
+<div class="sidebar-brand">ZAYA</div>
+<button class="header-icon-btn" onclick="toggleSidebar(false)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+</div>
+<div class="sidebar-content">
+<div class="sidebar-profile-card">
+<div class="sidebar-avatar">Z</div>
+<div>
+<div class="sidebar-user-name">Welcome to ZAYA</div>
+<div class="sidebar-user-action" onclick="openTrackModal()">Track My Orders →</div>
+</div>
+</div>
+<div>
+<div class="sidebar-group-title">Shop Collections</div>
+<ul class="sidebar-menu-list">
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('All'); toggleSidebar(false);">✨ New Arrivals '26</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Kurtas'); toggleSidebar(false);">🥻 Kurtas & Sets</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Dresses'); toggleSidebar(false);">👗 Western Dresses</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Co-ords'); toggleSidebar(false);">🧥 Co-ord Sets</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Sarees'); toggleSidebar(false);">🌸 Pure Silk Sarees</a></li>
+</ul>
+</div>
+<div>
+<div class="sidebar-group-title">Help & Orders</div>
+<ul class="sidebar-menu-list">
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openTrackModal(); toggleSidebar(false);">📦 Track Order Status</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openGeneralChatWhatsApp(); toggleSidebar(false);">🔄 Doorstep Exchange</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openGeneralChatWhatsApp(); toggleSidebar(false);">💬 WhatsApp Helpdesk</a></li>
+</ul>
+</div>
+</div>
 </aside>
 
-<div class="hero-card">
-  <div class="hero-tag">New Season '26</div>
-  <h1 class="hero-title">Timeless Grace & Modern Pret</h1>
-  <p class="hero-desc">Bespoke kurtas, coordinated sets, and flowing silk silhouettes.</p>
+<!-- Hero Section -->
+<div class="hero-card fade-up-init">
+<div class="hero-tag">New Season '26</div>
+<h1 class="hero-title">Timeless Grace & Modern Pret</h1>
+<p class="hero-desc">Bespoke kurtas, coordinated sets, and flowing silk silhouettes. Tap Add to Cart to pick your color & size, and order on WhatsApp.</p>
 </div>
 
-<div class="cat-scroll">
-  <button class="cat-pill active" onclick="setCategory('All')">All Pieces</button>
-  <button class="cat-pill" onclick="setCategory('Kurtas')">Kurtas & Sets</button>
-  <button class="cat-pill" onclick="setCategory('Dresses')">Western Dresses</button>
-  <button class="cat-pill" onclick="setCategory('Co-ords')">Co-ord Sets</button>
-  <button class="cat-pill" onclick="setCategory('Sarees')">Pure Silk & Sarees</button>
+<!-- Category Filter Pills -->
+<div class="cat-scroll fade-up-init">
+<button class="cat-pill active" onclick="setCategory('All')">All Pieces</button>
+<button class="cat-pill" onclick="setCategory('Kurtas')">Kurtas & Sets</button>
+<button class="cat-pill" onclick="setCategory('Dresses')">Western Dresses</button>
+<button class="cat-pill" onclick="setCategory('Co-ords')">Co-ord Sets</button>
+<button class="cat-pill" onclick="setCategory('Sarees')">Pure Silk & Sarees</button>
 </div>
 
+<!-- Product Catalog Grid -->
 <main class="main-wrap">
-  <div class="grid-layout" id="productGrid">
-    <p style="color: var(--muted); padding: 20px;">Fetching boutique pieces...</p>
-  </div>
+<div class="grid-layout" id="productGrid"></div>
 </main>
 
-<!-- Shared Checkout Bag Drawer -->
-<div class="drawer-scrim" id="drawerScrim" onclick="toggleBagDrawer(false)"></div>
-<aside class="bag-pane" id="bagDrawer">
-  <div class="bag-header">
-    <h3 class="bag-title">Shopping Bag (<span id="drawerCount">0</span>)</h3>
-    <button class="header-icon-btn" onclick="toggleBagDrawer(false)">&times;</button>
-  </div>
-  <div class="bag-items-scroll" id="bagItemsContainer"></div>
-  <div class="bag-footer" id="bagFooter">
-    <div class="coupon-section">
-      <div style="font-size: 0.72rem; font-weight: 700;">PROMO CODE</div>
-      <div style="display:flex; gap:6px; margin-top:6px;">
-        <input type="text" id="couponInput" class="cust-field" placeholder="FESTIVE20" />
-        <button class="btn-add-cart-single" style="width: auto; padding: 6px 12px;" onclick="applyCoupon()">Apply</button>
-      </div>
-      <div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px;"></div>
-    </div>
-    <div class="address-section">
-      <div class="form-heading">1. Delivery Address</div>
-      <div class="cust-group">
-        <input type="text" id="custName" class="cust-field" placeholder="Full Name *" />
-        <input type="text" id="custAddr1" class="cust-field" placeholder="Address (Flat / Street) *" />
-        <input type="tel" id="custPincode" class="cust-field" placeholder="6-Digit Pincode *" maxlength="6" />
-        <input type="tel" id="custPhone" class="cust-field" placeholder="Phone Number (10 digits) *" maxlength="10" />
-      </div>
-    </div>
-    <div class="price-ledger">
-      <div class="ledger-row"><span>Subtotal:</span><span id="ledgerSubtotal">₹0</span></div>
-      <div class="ledger-row total"><span>Total Payable:</span><span id="ledgerTotal">₹0</span></div>
-    </div>
-    <button class="btn-wa-order" onclick="submitOrderToWhatsApp()">Order on WhatsApp</button>
-  </div>
-</aside>
-
-<div class="toast" id="toastNotice"></div>
-
-<!-- Track Modal -->
+<!-- Track Order Modal -->
 <div class="track-modal-overlay" id="trackModal" onclick="closeTrackModal(event)">
-  <div class="track-modal-box">
-    <button class="legal-modal-close" onclick="closeTrackModalDirect()">&times;</button>
-    <h3 style="font-family: var(--font-serif); margin-bottom: 8px;">Track Your Order</h3>
-    <input type="text" id="trackInput" class="cust-field" placeholder="Enter Mobile Number or Order Code" style="margin-bottom: 12px;" />
-    <button class="btn-wa-order" onclick="submitTrackingInquiry()">Track on WhatsApp</button>
-  </div>
+<div class="track-modal-box">
+<button class="legal-modal-close" onclick="closeTrackModalDirect()">&times;</button>
+<h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 6px;">Track Your Order</h3>
+<p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px;">
+Enter your 10-digit mobile number or order code below to check live tracking updates on WhatsApp.
+</p>
+<input type="text" id="trackInput" class="cust-field" placeholder="Mobile Number or Order Code" style="margin-bottom: 12px; width: 100%;" />
+<button class="btn-wa-order" onclick="submitTrackingInquiry()">Track on WhatsApp</button>
+</div>
 </div>
 
+<!-- Universal Footer -->
 <footer class="site-footer">
-  <div class="footer-inner">
-    <div>
-      <div class="footer-brand">ZAYA</div>
-      <p class="footer-desc">Redefining contemporary women's couture and festive pret.</p>
-    </div>
-    <div>
-      <div class="footer-heading">Collections</div>
-      <ul class="footer-links">
-        <li><a href="javascript:void(0)" onclick="setCategory('Kurtas')">Kurtas & Sets</a></li>
-        <li><a href="javascript:void(0)" onclick="setCategory('Dresses')">Western Dresses</a></li>
-        <li><a href="javascript:void(0)" onclick="setCategory('Co-ords')">Co-ord Sets</a></li>
-      </ul>
-    </div>
-    <div>
-      <div class="footer-heading">Customer Care</div>
-      <ul class="footer-links">
-        <li><a href="javascript:void(0)" onclick="openTrackModal()">Track WhatsApp Order</a></li>
-      </ul>
-    </div>
-  </div>
+<div class="footer-inner">
+<div>
+<div class="footer-brand">ZAYA</div>
+<p class="footer-desc">Redefining contemporary women's couture and festive pret. Handcrafted breathable fabrics, authentic embroidery, and silhouettes designed for effortless elegance.</p>
+<div style="font-size: 0.78rem; color: #E0B2A3; font-weight: 600;">📞 WhatsApp Helpdesk: +91 98765 43210</div>
+</div>
+<div>
+<div class="footer-heading">Collections</div>
+<ul class="footer-links">
+<li><a href="javascript:void(0)" onclick="setCategory('Kurtas')">Kurtas & Sets</a></li>
+<li><a href="javascript:void(0)" onclick="setCategory('Dresses')">Western Dresses</a></li>
+<li><a href="javascript:void(0)" onclick="setCategory('Co-ords')">Co-ord Sets</a></li>
+<li><a href="javascript:void(0)" onclick="setCategory('Sarees')">Pure Silk Sarees</a></li>
+</ul>
+</div>
+<div>
+<div class="footer-heading">Customer Care</div>
+<ul class="footer-links">
+<li><a href="javascript:void(0)" onclick="openTrackModal()">Track Order</a></li>
+<li><a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()">Doorstep Exchange Request</a></li>
+<li><a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()">Customer Helpline</a></li>
+</ul>
+</div>
+<div>
+<div class="footer-heading">Trust & Delivery</div>
+<ul class="footer-links">
+<li><a href="javascript:void(0)">Cash on Delivery Available</a></li>
+<li><a href="javascript:void(0)">Free Prepaid Shipping</a></li>
+<li><a href="javascript:void(0)">Easy Doorstep Exchange</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-payment-strip">
+<div class="copyright-text">© 2026 ZAYA ATELIER. All rights reserved.</div>
+<div class="footer-pay-badges">
+<span class="footer-badge">UPI</span>
+<span class="footer-badge">Google Pay</span>
+<span class="footer-badge">PhonePe</span>
+<span class="footer-badge">Cash on Delivery</span>
+</div>
+</div>
 </footer>
 
+<!-- Shopping Bag Drawer -->
+<div class="drawer-scrim" id="drawerScrim" onclick="toggleBagDrawer(false)"></div>
+<aside class="bag-pane" id="bagDrawer">
+<div class="bag-header">
+<h3 class="bag-title">Shopping Bag (<span id="drawerCount">0</span>)</h3>
+<button class="header-icon-btn" onclick="toggleBagDrawer(false)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+</div>
+<div class="bag-items-scroll" id="bagItemsContainer"></div>
+<div class="bag-footer" id="bagFooter">
+<div class="coupon-section">
+<div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase;">Promo Code</div>
+<div class="coupon-row">
+<input type="text" id="couponInput" class="coupon-box-input" placeholder="e.g. FESTIVE20" />
+<button class="btn-apply" onclick="applyCoupon()">Apply</button>
+</div>
+<div class="pills-group">
+<span class="chip-code" onclick="quickCoupon('FESTIVE20')">FESTIVE20 (20% OFF)</span>
+<span class="chip-code" onclick="quickCoupon('WELCOME10')">WELCOME10 (10% OFF)</span>
+</div>
+<div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px; font-weight: 600;"></div>
+</div>
+<div class="address-section">
+<div class="form-heading">1. Delivery Address</div>
+<div class="cust-group">
+<input type="text" id="custName" class="cust-field" placeholder="Full Name *" />
+<input type="text" id="custAddr1" class="cust-field" placeholder="Address (House/Flat No., Street, Area) *" />
+<input type="text" id="custNearby" class="cust-field" placeholder="Nearby Landmark (Optional)" />
+<input type="tel" id="custPincode" class="cust-field" placeholder="6-Digit Pincode *" inputmode="numeric" maxlength="6" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" />
+<input type="tel" id="custPhone" class="cust-field" placeholder="Phone Number (10 digits) *" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" />
+</div>
+</div>
+<div class="payment-section">
+<div class="form-heading">2. Payment Method</div>
+<div class="payment-options-row">
+<label class="payment-card active" id="payCardUpi" onclick="selectPaymentMethod('UPI')">
+<input type="radio" name="payMethod" value="UPI" checked class="payment-radio" />
+<div class="payment-card-body">
+<div class="payment-card-title"><span>UPI / Online Payment</span><span style="color:#2E7D32;">FREE</span></div>
+<div class="pay-badge-list"><span class="pay-logo-badge badge-gpay">GPay</span><span class="pay-logo-badge badge-phonepe">PhonePe</span><span class="pay-logo-badge badge-paytm">Paytm</span></div>
+</div>
+</label>
+<label class="payment-card" id="payCardCod" onclick="selectPaymentMethod('COD')">
+<input type="radio" name="payMethod" value="COD" class="payment-radio" />
+<div class="payment-card-body">
+<div class="payment-card-title"><span>Cash on Delivery (COD)</span><span style="color:var(--accent);">+₹50</span></div>
+</div>
+</label>
+</div>
+</div>
+<div class="price-ledger">
+<div class="ledger-row"><span>Bag Subtotal:</span><span id="ledgerSubtotal">₹0</span></div>
+<div class="ledger-row" id="ledgerDiscountRow" style="display: none; color: #2E7D32; font-weight: 600;"><span>Discount:</span><span id="ledgerDiscountVal">-₹0</span></div>
+<div class="ledger-row" id="ledgerCodRow" style="display: none; color: var(--accent); font-weight: 600;"><span>COD Convenience Fee:</span><span>+₹50</span></div>
+<div class="ledger-row"><span>Shipping:</span><span style="color: #2E7D32; font-weight: 600;">FREE</span></div>
+<div class="ledger-row total"><span>Total Payable:</span><span id="ledgerTotal">₹0</span></div>
+</div>
+<button class="btn-wa-order" onclick="submitOrderToWhatsApp()">Order on WhatsApp</button>
+</div>
+</aside>
+
+<!-- Floating WhatsApp Chat -->
+<a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()" class="floating-chat-btn">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+<span>Chat with Us</span>
+</a>
+
+<!-- Toast Notification -->
+<div class="toast" id="toastNotice">Item added to your shopping bag!</div>
+
+<!-- Scripts -->
+<script src="js/supabase.js"></script>
 <script src="js/catalog.js"></script>
 </body>
 </html>
