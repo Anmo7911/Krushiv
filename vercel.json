@@ -1,25 +1,25 @@
 {
-"cleanUrls": true,
-"rewrites": [
-{
-"source": "/admin",
-"destination": "/admin.html"
-},
-{
-"source": "/admin/coupons",
-"destination": "/coupons.html"
-},
-{
-"source": "/coupons",
-"destination": "/coupons.html"
-},
-{
-"source": "/p/:slug",
-"destination": "/index.html?p=:slug"
-},
-{
-"source": "/t/:token",
-"destination": "/index.html?token=:token"
-}
-]
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/admin/coupons",
+      "destination": "/coupons.html"
+    },
+    {
+      "source": "/coupons",
+      "destination": "/coupons.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/p/:slug",
+      "destination": "/index.html?p=:slug"
+    },
+    {
+      "source": "/t/:token",
+      "destination": "/index.html?token=:token"
+    }
+  ]
 }
