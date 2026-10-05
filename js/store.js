@@ -47,9 +47,7 @@ grid.innerHTML = `
 `;
 
 try {
-const { data, error } = await supabase
-.from('products')
-.select('*')
+const { data, error } = await supabaseClient.from('products').select('*')
 .order('created_at', { ascending: false });
 
 if (error) throw error;
