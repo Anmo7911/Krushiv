@@ -4,20 +4,1223 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>ZAYA | Women's Pret & Couture</title>
-<link rel="stylesheet" href="css/style.css" />
-<!-- Supabase CDN (Optional, graceful fallback included) -->
+
+<!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* --- CSS RESET & THEME VARIABLES --- */
+:root {
+--bg: #FBF9F6;
+--surface: #FFFFFF;
+--noir: #181615;
+--noir-light: #2D2A28;
+--accent: #A86B58;
+--accent-soft: #F6EDE8;
+--badge-pink: #FCE6EC;
+--badge-pink-border: #F8D0DC;
+--gold-star: #F5A623;
+--muted: #78726D;
+--border: #E8E2D9;
+--border-light: #F2ECE5;
+--wa-green: #25D366;
+--wa-dark: #1EBE5B;
+--radius-sm: 6px;
+--radius-md: 12px;
+--radius-lg: 20px;
+--radius-full: 9999px;
+--font-serif: Georgia, 'Times New Roman', serif;
+--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+--shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+--shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.1);
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+background: var(--bg);
+color: var(--noir);
+font-family: var(--font-sans);
+line-height: 1.45;
+overflow-x: hidden;
+min-height: 100vh;
+position: relative;
+}
+
+button, a {
+font-family: inherit;
+cursor: pointer;
+border: none;
+background: none;
+text-decoration: none;
+transition: all 0.25s ease;
+}
+
+/* SAFE FADE-IN (NEVER LEAVES SCREEN BLANK IF JS IS BUSY) */
+.fade-up-in {
+animation: fadeInSmooth 0.5s ease forwards;
+}
+@keyframes fadeInSmooth {
+from { opacity: 0.4; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- STRICT SINGLE-LINE TOP OFFER BANNER --- */
+.top-bar {
+background: var(--noir);
+color: #fff;
+font-size: clamp(0.64rem, 2.4vw, 0.74rem);
+text-transform: uppercase;
+letter-spacing: 0.08em;
+text-align: center;
+padding: 8px 12px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+display: block;
+width: 100%;
+}
+.top-bar strong { color: #E0B2A3; }
+
+/* --- STICKY HEADER --- */
+.header {
+position: sticky;
+top: 0;
+z-index: 50;
+background: rgba(251, 249, 246, 0.96);
+backdrop-filter: blur(10px);
+border-bottom: 1px solid var(--border);
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 12px 18px;
+}
+
+.brand-logo {
+font-family: var(--font-serif);
+font-size: 1.85rem;
+font-weight: 700;
+letter-spacing: 0.12em;
+cursor: pointer;
+text-transform: uppercase;
+color: var(--noir);
+}
+
+.header-actions-right {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.header-icon-btn {
+position: relative;
+width: 38px;
+height: 38px;
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: 50%;
+color: var(--noir);
+}
+.header-icon-btn:hover {
+background: var(--border-light);
+transform: scale(1.05);
+}
+
+.bag-badge-pill {
+position: absolute;
+top: 2px;
+right: 2px;
+background: var(--accent);
+color: #fff;
+font-size: 0.65rem;
+font-weight: 700;
+min-width: 18px;
+height: 18px;
+border-radius: var(--radius-full);
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 0 4px;
+}
+
+/* --- VIEW TOGGLE --- */
+.view-container { display: none; }
+.view-container.active { display: block; }
+
+/* --- HERO BANNER (ALWAYS VISIBLE) --- */
+.hero-card {
+margin: 14px 14px 20px;
+background: linear-gradient(135deg, #24201E 0%, #171514 100%);
+color: #fff;
+border-radius: var(--radius-md);
+padding: 34px 20px;
+text-align: center;
+box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.hero-tag {
+font-size: 0.7rem;
+letter-spacing: 0.2em;
+text-transform: uppercase;
+color: #E0B2A3;
+font-weight: 600;
+margin-bottom: 6px;
+}
+.hero-title {
+font-family: var(--font-serif);
+font-size: 2.2rem;
+font-style: italic;
+margin-bottom: 8px;
+line-height: 1.2;
+}
+.hero-desc {
+font-size: 0.85rem;
+color: #CBC5BE;
+max-width: 460px;
+margin: 0 auto;
+}
+
+/* --- CATEGORY FILTERS --- */
+.cat-scroll {
+display: flex;
+gap: 8px;
+padding: 0 16px 16px;
+overflow-x: auto;
+scrollbar-width: none;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+white-space: nowrap;
+padding: 8px 18px;
+border-radius: var(--radius-full);
+font-size: 0.82rem;
+font-weight: 500;
+background: var(--surface);
+border: 1px solid var(--border);
+color: var(--muted);
+transition: all 0.25s ease;
+}
+.cat-pill.active {
+background: var(--noir);
+color: #fff;
+border-color: var(--noir);
+font-weight: 600;
+}
+
+/* --- PRODUCT GRID --- */
+.main-wrap {
+max-width: 1240px;
+margin: 0 auto;
+padding: 0 14px 70px;
+}
+
+.grid-layout {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 14px;
+}
+@media (min-width: 768px) {
+.grid-layout {
+grid-template-columns: repeat(3, 1fr);
+gap: 20px;
+}
+}
+@media (min-width: 1024px) {
+.grid-layout {
+grid-template-columns: repeat(4, 1fr);
+gap: 24px;
+}
+}
+
+.prod-card {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-md);
+box-shadow: var(--shadow);
+display: flex;
+flex-direction: column;
+height: 100%;
+overflow: hidden;
+transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.prod-card:hover {
+transform: translateY(-4px);
+box-shadow: var(--shadow-hover);
+}
+
+.carousel-box {
+position: relative;
+width: 100%;
+aspect-ratio: 3 / 4;
+background: #EAE6DF;
+overflow: hidden;
+cursor: pointer;
+}
+
+.carousel-track {
+display: flex;
+width: 100%;
+height: 100%;
+transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.carousel-slide {
+flex: 0 0 100%;
+width: 100%;
+min-width: 100%;
+height: 100%;
+}
+
+.carousel-slide img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+object-position: top center;
+display: block;
+}
+
+.carousel-dots {
+position: absolute;
+bottom: 8px;
+left: 50%;
+transform: translateX(-50%);
+display: flex;
+gap: 4px;
+z-index: 5;
+background: rgba(0, 0, 0, 0.35);
+padding: 3px 6px;
+border-radius: var(--radius-full);
+backdrop-filter: blur(4px);
+}
+
+.c-dot {
+width: 5px;
+height: 5px;
+border-radius: var(--radius-full);
+background: rgba(255, 255, 255, 0.5);
+transition: all 0.25s ease;
+}
+.c-dot.active {
+width: 14px;
+background: #FFFFFF;
+}
+
+.tag-chip {
+position: absolute;
+top: 8px;
+left: 8px;
+background: rgba(255, 255, 255, 0.95);
+padding: 3px 7px;
+border-radius: var(--radius-sm);
+font-size: 0.62rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+color: var(--accent);
+z-index: 6;
+}
+
+.prod-info {
+padding: 12px 10px 10px;
+display: flex;
+flex-direction: column;
+flex-grow: 1;
+}
+
+.rating-row {
+display: flex;
+align-items: center;
+gap: 4px;
+font-size: 0.72rem;
+margin-bottom: 4px;
+}
+.rating-stars {
+color: var(--gold-star);
+font-weight: 700;
+font-size: 0.75rem;
+}
+.rating-count {
+color: var(--muted);
+font-size: 0.68rem;
+}
+
+.bought-badge {
+font-size: 0.68rem;
+color: #B45309;
+background: #FEF3C7;
+padding: 2px 6px;
+border-radius: var(--radius-sm);
+display: inline-block;
+width: fit-content;
+margin-bottom: 6px;
+font-weight: 600;
+}
+
+.prod-cat {
+font-size: 0.65rem;
+text-transform: uppercase;
+color: var(--muted);
+letter-spacing: 0.06em;
+margin-bottom: 2px;
+}
+
+.prod-name {
+font-size: 0.88rem;
+font-weight: 600;
+color: var(--noir);
+line-height: 1.3;
+margin-bottom: 6px;
+height: 2.6em;
+overflow: hidden;
+display: -webkit-box;
+-webkit-line-clamp: 2;
+-webkit-box-orient: vertical;
+word-break: break-word;
+}
+
+.prod-price-row {
+display: flex;
+align-items: baseline;
+gap: 6px;
+margin-bottom: 10px;
+flex-wrap: wrap;
+}
+
+.val-sale {
+font-weight: 700;
+font-size: 0.98rem;
+color: var(--noir);
+}
+.val-mrp {
+font-size: 0.76rem;
+color: var(--muted);
+text-decoration: line-through;
+}
+.val-off {
+font-size: 0.68rem;
+color: #2E7D32;
+font-weight: 700;
+}
+
+.btn-add-cart-single {
+margin-top: auto;
+width: 100%;
+background: var(--noir);
+border: 1px solid var(--noir);
+border-radius: var(--radius-sm);
+padding: 10px 8px;
+font-size: 0.8rem;
+font-weight: 600;
+color: #fff;
+text-align: center;
+transition: all 0.2s ease;
+}
+.btn-add-cart-single:hover {
+background: var(--noir-light);
+transform: translateY(-1px);
+}
+
+/* --- PRODUCT DETAILS PAGE (PDP) --- */
+.pdp-container {
+max-width: 980px;
+margin: 0 auto;
+padding: 10px 14px 110px;
+}
+
+.back-nav {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-size: 0.84rem;
+font-weight: 600;
+cursor: pointer;
+margin-bottom: 12px;
+color: var(--noir);
+}
+
+.pdp-split {
+display: flex;
+flex-direction: column;
+gap: 16px;
+}
+@media (min-width: 768px) {
+.pdp-split {
+flex-direction: row;
+gap: 32px;
+align-items: flex-start;
+}
+.pdp-media-pane { width: 48%; }
+.pdp-info-pane { width: 52%; }
+}
+
+.pdp-peek-slider-wrapper {
+position: relative;
+width: 100%;
+margin-bottom: 8px;
+}
+
+.pdp-peek-slider {
+display: flex;
+gap: 12px;
+overflow-x: auto;
+scroll-snap-type: x mandatory;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+padding-bottom: 4px;
+}
+.pdp-peek-slider::-webkit-scrollbar { display: none; }
+
+.pdp-peek-slide {
+flex: 0 0 90%;
+width: 90%;
+height: 390px;
+aspect-ratio: 3 / 4;
+border-radius: var(--radius-md);
+overflow: hidden;
+scroll-snap-align: start;
+background: #EAE6DF;
+flex-shrink: 0;
+}
+@media (min-width: 768px) {
+.pdp-peek-slide {
+flex: 0 0 88%;
+height: 470px;
+}
+}
+
+.pdp-peek-slide img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+object-position: top center;
+display: block;
+}
+
+.swipe-hint-pill {
+font-size: 0.68rem;
+color: var(--muted);
+text-align: center;
+margin-top: 4px;
+font-weight: 500;
+}
+
+.pdp-heading {
+font-family: var(--font-serif);
+font-size: 1.65rem;
+font-weight: normal;
+margin: 6px 0 6px;
+line-height: 1.25;
+}
+
+.pdp-rating-strip {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 8px;
+}
+
+.pdp-price-box {
+display: flex;
+align-items: baseline;
+gap: 10px;
+margin-bottom: 14px;
+}
+
+.color-section { margin-bottom: 14px; }
+.section-label {
+font-size: 0.78rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+margin-bottom: 6px;
+}
+.color-swatches {
+display: flex;
+gap: 10px;
+align-items: center;
+}
+.color-swatch-btn {
+width: 32px;
+height: 32px;
+border-radius: 50%;
+border: 2px solid #FFFFFF;
+outline: 1px solid var(--border);
+cursor: pointer;
+}
+.color-swatch-btn.selected {
+outline: 2px solid var(--noir);
+transform: scale(1.1);
+}
+
+.sizes-flex {
+display: flex;
+gap: 6px;
+margin-bottom: 16px;
+flex-wrap: wrap;
+}
+.size-btn-pill {
+flex: 1;
+min-width: 48px;
+height: 40px;
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+font-weight: 600;
+font-size: 0.82rem;
+background: var(--surface);
+}
+.size-btn-pill.selected {
+background: var(--noir);
+color: #fff;
+border-color: var(--noir);
+}
+
+.pdp-actions-row {
+display: flex;
+gap: 10px;
+margin-bottom: 18px;
+}
+.btn-action-bag {
+flex: 1;
+background: var(--surface);
+border: 1.5px solid var(--noir);
+color: var(--noir);
+padding: 13px;
+border-radius: var(--radius-sm);
+font-size: 0.88rem;
+font-weight: 700;
+text-align: center;
+}
+.btn-action-order {
+flex: 1;
+background: var(--noir);
+border: 1.5px solid var(--noir);
+color: #fff;
+padding: 13px;
+border-radius: var(--radius-sm);
+font-size: 0.88rem;
+font-weight: 700;
+text-align: center;
+}
+
+.pdp-sticky-bar {
+position: fixed;
+bottom: 0;
+left: 0;
+width: 100%;
+background: rgba(255, 255, 255, 0.98);
+backdrop-filter: blur(10px);
+border-top: 1px solid var(--border);
+padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+display: flex;
+gap: 10px;
+z-index: 45;
+box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08);
+}
+.btn-sticky-bag {
+flex: 1;
+background: var(--surface);
+border: 1.5px solid var(--noir);
+color: var(--noir);
+height: 46px;
+border-radius: var(--radius-sm);
+font-weight: 700;
+font-size: 0.86rem;
+}
+.btn-sticky-order {
+flex: 1;
+background: var(--noir);
+border: 1.5px solid var(--noir);
+color: #fff;
+height: 46px;
+border-radius: var(--radius-sm);
+font-weight: 700;
+font-size: 0.86rem;
+}
+
+/* --- PINK TRUST BADGES --- */
+.trust-badges-strip {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 8px;
+margin: 18px 0 16px;
+padding: 14px 6px;
+background: #FFFFFF;
+border: 1px solid var(--border-light);
+border-radius: var(--radius-md);
+text-align: center;
+}
+.trust-badge-item {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+}
+.trust-badge-circle {
+width: 48px;
+height: 48px;
+border-radius: 50%;
+background: var(--badge-pink);
+border: 1px solid var(--badge-pink-border);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 1.25rem;
+}
+.trust-badge-title {
+font-size: 0.72rem;
+font-weight: 700;
+color: var(--noir);
+line-height: 1.2;
+}
+.trust-badge-sub {
+font-size: 0.64rem;
+color: var(--muted);
+line-height: 1.1;
+display: block;
+}
+
+/* --- ACCORDIONS --- */
+.accordion-group {
+display: flex;
+flex-direction: column;
+gap: 8px;
+margin-top: 14px;
+}
+.accordion-box {
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+background: #FFFFFF;
+overflow: hidden;
+}
+.accordion-header {
+padding: 13px 14px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+cursor: pointer;
+user-select: none;
+font-size: 0.84rem;
+font-weight: 700;
+color: var(--noir);
+text-transform: uppercase;
+letter-spacing: 0.04em;
+}
+.acc-toggle-icon {
+font-size: 1.1rem;
+font-weight: bold;
+color: var(--accent);
+transition: transform 0.3s ease;
+line-height: 1;
+}
+.accordion-content {
+display: none;
+padding: 12px 14px 16px;
+border-top: 1px solid var(--border-light);
+background: #FAF8F5;
+font-size: 0.82rem;
+}
+.spec-list {
+list-style: none;
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+.spec-list li {
+font-size: 0.8rem;
+color: var(--noir);
+display: flex;
+align-items: flex-start;
+gap: 8px;
+line-height: 1.4;
+}
+.spec-bullet { color: var(--accent); font-weight: bold; }
+
+/* --- REVIEWS MARQUEE --- */
+.reviews-section {
+border-top: 1px solid var(--border);
+padding: 24px 0 16px;
+overflow: hidden;
+}
+.reviews-header {
+font-family: var(--font-serif);
+font-size: 1.35rem;
+font-weight: 600;
+margin-bottom: 12px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+.marquee-wrapper { width: 100%; overflow: hidden; position: relative; }
+.marquee-track {
+display: flex;
+gap: 12px;
+width: max-content;
+animation: scrollLeftToRight 28s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+@keyframes scrollLeftToRight {
+0% { transform: translateX(-50%); }
+100% { transform: translateX(0%); }
+}
+.review-bubble {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-md);
+padding: 12px 14px;
+width: 275px;
+flex-shrink: 0;
+box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+.review-user-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 4px;
+}
+.review-name { font-size: 0.78rem; font-weight: 700; color: var(--noir); }
+.verified-chip {
+font-size: 0.62rem;
+color: #2E7D32;
+background: #E8F5E9;
+padding: 1px 5px;
+border-radius: 4px;
+font-weight: 700;
+}
+.review-stars { color: var(--gold-star); font-size: 0.72rem; margin-bottom: 4px; }
+.review-comment { font-size: 0.76rem; color: #4A4541; line-height: 1.35; }
+
+/* --- SIMILAR PRODUCTS --- */
+.similar-section {
+border-top: 1px solid var(--border);
+padding: 24px 0 20px;
+}
+.similar-title {
+font-family: var(--font-serif);
+font-size: 1.35rem;
+font-weight: 600;
+margin-bottom: 14px;
+}
+.similar-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 12px;
+}
+@media (min-width: 768px) {
+.similar-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* --- MOBILE SIDEBAR --- */
+.sidebar-overlay {
+position: fixed;
+inset: 0;
+background: rgba(18, 16, 15, 0.6);
+backdrop-filter: blur(4px);
+z-index: 120;
+opacity: 0;
+visibility: hidden;
+transition: all 0.3s ease;
+}
+.sidebar-overlay.open { opacity: 1; visibility: visible; }
+.mobile-sidebar {
+position: fixed;
+top: 0;
+right: 0;
+width: 100%;
+max-width: 320px;
+height: 100%;
+background: var(--surface);
+z-index: 130;
+box-shadow: -10px 0 35px rgba(0,0,0,0.15);
+transform: translateX(100%);
+transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+display: flex;
+flex-direction: column;
+}
+.mobile-sidebar.open { transform: translateX(0); }
+.sidebar-header {
+padding: 16px 20px;
+border-bottom: 1px solid var(--border);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.sidebar-brand { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; }
+.sidebar-content {
+flex: 1;
+overflow-y: auto;
+padding: 18px 20px;
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+.sidebar-profile-card {
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: var(--radius-md);
+padding: 14px;
+display: flex;
+align-items: center;
+gap: 12px;
+}
+.sidebar-avatar {
+width: 44px;
+height: 44px;
+border-radius: 50%;
+background: var(--accent);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 700;
+font-size: 1.1rem;
+}
+.sidebar-user-name { font-size: 0.88rem; font-weight: 700; color: var(--noir); }
+.sidebar-user-action { font-size: 0.74rem; color: var(--accent); font-weight: 600; cursor: pointer; }
+.sidebar-group-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.sidebar-menu-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.sidebar-menu-link {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 10px 12px;
+border-radius: var(--radius-sm);
+font-size: 0.86rem;
+font-weight: 600;
+color: var(--noir);
+}
+.sidebar-menu-link:hover { background: var(--bg); transform: translateX(3px); }
+
+/* --- TRACK ORDER MODAL --- */
+.track-modal-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.6);
+backdrop-filter: blur(4px);
+z-index: 180;
+display: none;
+align-items: center;
+justify-content: center;
+padding: 16px;
+}
+.track-modal-box {
+background: #FFFFFF;
+width: 100%;
+max-width: 440px;
+border-radius: var(--radius-md);
+padding: 24px;
+position: relative;
+}
+
+/* --- UNIVERSAL FOOTER --- */
+.site-footer {
+background: #161413;
+color: #E2DDD7;
+padding: 40px 18px 90px;
+border-top: 1px solid #2B2724;
+font-size: 0.84rem;
+}
+.footer-inner {
+max-width: 1200px;
+margin: 0 auto;
+display: grid;
+grid-template-columns: 1fr;
+gap: 30px;
+}
+@media (min-width: 768px) {
+.footer-inner {
+grid-template-columns: 1.5fr 1fr 1fr 1fr;
+gap: 36px;
+}
+}
+.footer-brand {
+font-family: var(--font-serif);
+font-size: 1.8rem;
+font-weight: 700;
+color: #fff;
+letter-spacing: 0.1em;
+margin-bottom: 8px;
+}
+.footer-desc { font-size: 0.8rem; color: #A8A29D; line-height: 1.5; margin-bottom: 14px; }
+.footer-heading { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: #fff; margin-bottom: 12px; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a { color: #B5AFA8; font-size: 0.8rem; }
+.footer-links a:hover { color: #FFFFFF; }
+.footer-payment-strip {
+margin-top: 30px;
+padding-top: 20px;
+border-top: 1px solid #2A2522;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 12px;
+text-align: center;
+}
+@media (min-width: 768px) {
+.footer-payment-strip { flex-direction: row; justify-content: space-between; }
+}
+.footer-pay-badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.footer-badge {
+background: #23201D;
+border: 1px solid #38332F;
+padding: 3px 8px;
+border-radius: 4px;
+font-size: 0.68rem;
+font-weight: 700;
+color: #D6CEC5;
+}
+.copyright-text { font-size: 0.72rem; color: #8C857E; }
+
+/* --- BAG & CHECKOUT DRAWER --- */
+.drawer-scrim {
+position: fixed;
+inset: 0;
+background: rgba(0, 0, 0, 0.5);
+z-index: 100;
+opacity: 0;
+visibility: hidden;
+transition: all 0.3s ease;
+}
+.drawer-scrim.open { opacity: 1; visibility: visible; }
+.bag-pane {
+position: fixed;
+top: 0;
+right: 0;
+width: 100%;
+max-width: 440px;
+height: 100%;
+background: var(--surface);
+z-index: 110;
+box-shadow: -8px 0 30px rgba(0,0,0,0.15);
+transform: translateX(100%);
+transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+display: flex;
+flex-direction: column;
+}
+.bag-pane.open { transform: translateX(0); }
+.bag-header {
+padding: 16px 20px;
+border-bottom: 1px solid var(--border);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.bag-title { font-family: var(--font-serif); font-size: 1.35rem; font-weight: 700; }
+.bag-items-scroll {
+flex: 1;
+overflow-y: auto;
+padding: 16px 20px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+.bag-row { display: flex; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.bag-row-thumb {
+width: 60px;
+height: 75px;
+border-radius: var(--radius-sm);
+overflow: hidden;
+flex-shrink: 0;
+background: #EAE6DF;
+}
+.bag-row-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.bag-row-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.qty-wrap { display: flex; align-items: center; gap: 8px; }
+.step-btn {
+width: 24px;
+height: 24px;
+border: 1px solid var(--border);
+border-radius: 4px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 600;
+font-size: 0.8rem;
+}
+.bag-footer {
+border-top: 1px solid var(--border);
+padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
+background: var(--bg);
+overflow-y: auto;
+max-height: 60vh;
+}
+.coupon-section {
+background: var(--surface);
+border: 1px dashed var(--border);
+border-radius: var(--radius-sm);
+padding: 10px 12px;
+margin-bottom: 12px;
+}
+.coupon-row { display: flex; gap: 6px; margin-top: 6px; }
+.coupon-box-input {
+flex: 1;
+border: 1px solid var(--border);
+padding: 8px 10px;
+border-radius: var(--radius-sm);
+font-size: 0.8rem;
+text-transform: uppercase;
+font-weight: 600;
+outline: none;
+}
+.btn-apply {
+background: var(--noir);
+color: #fff;
+padding: 8px 14px;
+border-radius: var(--radius-sm);
+font-size: 0.78rem;
+font-weight: 600;
+}
+.chip-code {
+font-size: 0.68rem;
+background: var(--accent-soft);
+color: var(--accent);
+padding: 3px 8px;
+border-radius: var(--radius-full);
+font-weight: 700;
+cursor: pointer;
+}
+.address-section {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 12px;
+margin-bottom: 12px;
+}
+.form-heading {
+font-size: 0.75rem;
+font-weight: 700;
+text-transform: uppercase;
+margin-bottom: 8px;
+color: var(--noir);
+}
+.cust-group { display: flex; flex-direction: column; gap: 6px; }
+.cust-field {
+background: #FAFAFA;
+border: 1px solid var(--border);
+padding: 8px 10px;
+border-radius: var(--radius-sm);
+font-size: 0.8rem;
+outline: none;
+}
+.payment-section {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 12px;
+margin-bottom: 12px;
+}
+.payment-options-row { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.payment-card {
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 10px;
+display: flex;
+align-items: flex-start;
+gap: 10px;
+cursor: pointer;
+background: #FAFAFA;
+}
+.payment-card.active { border-color: var(--noir); background: #FFFFFF; }
+.payment-card-body { flex: 1; }
+.payment-card-title { font-size: 0.82rem; font-weight: 700; display: flex; justify-content: space-between; }
+.pay-badge-list { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.pay-logo-badge {
+font-size: 0.65rem;
+font-weight: 800;
+padding: 2px 6px;
+border-radius: 4px;
+text-transform: uppercase;
+}
+.badge-gpay { background: #E8F0FE; color: #1A73E8; }
+.badge-phonepe { background: #EDE7F6; color: #5F259F; }
+.badge-paytm { background: #E1F5FE; color: #00B9F5; }
+.price-ledger {
+font-size: 0.82rem;
+margin-bottom: 12px;
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 10px 12px;
+}
+.ledger-row { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 5px; }
+.ledger-row.total {
+font-size: 1.1rem;
+font-weight: 700;
+color: var(--noir);
+border-top: 1px dashed var(--border);
+padding-top: 8px;
+margin-top: 6px;
+}
+.btn-wa-order {
+width: 100%;
+background: var(--wa-green);
+color: #fff;
+padding: 14px;
+border-radius: var(--radius-sm);
+font-size: 0.94rem;
+font-weight: 700;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+}
+.btn-wa-order:hover { background: var(--wa-dark); }
+
+/* FLOATING CHAT */
+.floating-chat-btn {
+position: fixed;
+bottom: 120px;
+right: 16px;
+background: var(--wa-green);
+color: #fff;
+padding: 10px 16px;
+border-radius: var(--radius-full);
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 0.82rem;
+font-weight: 700;
+box-shadow: 0 6px 22px rgba(37, 211, 102, 0.45);
+z-index: 80;
+cursor: pointer;
+}
+.floating-chat-btn:hover { background: var(--wa-dark); transform: translateY(-2px); }
+
+/* TOAST */
+.toast {
+position: fixed;
+bottom: 60px;
+left: 50%;
+transform: translateX(-50%) translateY(180px);
+opacity: 0;
+background: var(--noir);
+color: #fff;
+padding: 9px 18px;
+border-radius: var(--radius-full);
+font-size: 0.8rem;
+font-weight: 500;
+z-index: 300;
+transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
 </head>
 <body>
 
-<!-- Top Announcement Bar -->
+<!-- 1. Top Offer Banner -->
 <div class="top-bar">
 Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
 </div>
 
-<!-- Header with Lucide Icons (Bag -> Profile -> 3 Lines) -->
+<!-- 2. Sticky Header with Lucide Icons -->
 <header class="header">
-<div class="brand-logo" onclick="window.location.href='index.html'">ZAYA</div>
+<div class="brand-logo" onclick="openHomeView()">ZAYA</div>
 
 <div class="header-actions-right">
 <!-- 1. Bag Icon -->
@@ -44,7 +1247,7 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 </div>
 </header>
 
-<!-- Mobile Sidebar Drawer -->
+<!-- 3. Mobile Slide-in Sidebar -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 <aside class="mobile-sidebar" id="mobileSidebar">
 <div class="sidebar-header">
@@ -64,17 +1267,17 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 <div>
 <div class="sidebar-group-title">Shop Collections</div>
 <ul class="sidebar-menu-list">
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('All'); toggleSidebar(false);">✨ New Arrivals '26</a></li>
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Kurtas'); toggleSidebar(false);">🥻 Kurtas & Sets</a></li>
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Dresses'); toggleSidebar(false);">👗 Western Dresses</a></li>
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Co-ords'); toggleSidebar(false);">🧥 Co-ord Sets</a></li>
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Sarees'); toggleSidebar(false);">🌸 Pure Silk Sarees</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('All'); toggleSidebar(false);">✨ All Collections</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Kurtas'); toggleSidebar(false);">🥻 Kurtas & Sets</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Dresses'); toggleSidebar(false);">👗 Western Dresses</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Co-ords'); toggleSidebar(false);">🧥 Co-ord Sets</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Sarees'); toggleSidebar(false);">🌸 Pure Silk Sarees</a></li>
 </ul>
 </div>
 <div>
-<div class="sidebar-group-title">Help & Orders</div>
+<div class="sidebar-group-title">Orders & Assistance</div>
 <ul class="sidebar-menu-list">
-<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openTrackModal(); toggleSidebar(false);">📦 Track Order Status</a></li>
+<li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openTrackModal(); toggleSidebar(false);">📦 Track Order</a></li>
 <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openGeneralChatWhatsApp(); toggleSidebar(false);">🔄 Doorstep Exchange</a></li>
 <li><a href="javascript:void(0)" class="sidebar-menu-link" onclick="openGeneralChatWhatsApp(); toggleSidebar(false);">💬 WhatsApp Helpdesk</a></li>
 </ul>
@@ -82,15 +1285,19 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 </div>
 </aside>
 
-<!-- Hero Section -->
-<div class="hero-card fade-up-init">
+<!-- =========================================
+VIEW 1: CATALOG VIEW (HOME)
+========================================== -->
+<section id="catalogView" class="view-container active">
+<!-- Hero Banner -->
+<div class="hero-card">
 <div class="hero-tag">New Season '26</div>
 <h1 class="hero-title">Timeless Grace & Modern Pret</h1>
 <p class="hero-desc">Bespoke kurtas, coordinated sets, and flowing silk silhouettes. Tap Add to Cart to pick your color & size, and order on WhatsApp.</p>
 </div>
 
-<!-- Category Filter Pills -->
-<div class="cat-scroll fade-up-init">
+<!-- Category Filters -->
+<div class="cat-scroll">
 <button class="cat-pill active" onclick="setCategory('All')">All Pieces</button>
 <button class="cat-pill" onclick="setCategory('Kurtas')">Kurtas & Sets</button>
 <button class="cat-pill" onclick="setCategory('Dresses')">Western Dresses</button>
@@ -98,23 +1305,141 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 <button class="cat-pill" onclick="setCategory('Sarees')">Pure Silk & Sarees</button>
 </div>
 
-<!-- Product Catalog Grid -->
+<!-- Product Grid -->
 <main class="main-wrap">
 <div class="grid-layout" id="productGrid"></div>
 </main>
+</section>
 
-<!-- Track Order Modal -->
-<div class="track-modal-overlay" id="trackModal" onclick="closeTrackModal(event)">
-<div class="track-modal-box">
-<button class="legal-modal-close" onclick="closeTrackModalDirect()">&times;</button>
-<h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 6px;">Track Your Order</h3>
-<p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px;">
-Enter your 10-digit mobile number or order code below to check live tracking updates on WhatsApp.
-</p>
-<input type="text" id="trackInput" class="cust-field" placeholder="Mobile Number or Order Code" style="margin-bottom: 12px; width: 100%;" />
-<button class="btn-wa-order" onclick="submitTrackingInquiry()">Track on WhatsApp</button>
+<!-- =========================================
+VIEW 2: DEDICATED PRODUCT DETAILS PAGE
+========================================== -->
+<section id="pdpView" class="view-container">
+<div class="pdp-container">
+<div class="back-nav" onclick="openHomeView()">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+<span>Back to All Pieces</span>
+</div>
+
+<div class="pdp-split">
+<!-- 90% / 10% Peek Slider -->
+<div class="pdp-media-pane">
+<div class="pdp-peek-slider-wrapper">
+<div class="pdp-peek-slider" id="pdpPeekSlider"></div>
+<div class="swipe-hint-pill">👉 Swipe left to see more photos</div>
 </div>
 </div>
+
+<div class="pdp-info-pane">
+<div style="font-size: 0.72rem; text-transform: uppercase; color: var(--accent); font-weight: 700;" id="pdpCatName"></div>
+<h1 class="pdp-heading" id="pdpItemTitle"></h1>
+
+<div class="pdp-rating-strip">
+<span class="rating-stars" id="pdpRatingStars">★ 4.9</span>
+<span class="rating-count" id="pdpRatingReviews">(184 Reviews)</span>
+<span class="bought-badge" id="pdpBoughtStats">🔥 420+ bought this month</span>
+</div>
+
+<div class="pdp-price-box">
+<span style="font-size: 1.45rem; font-weight: 700;" id="pdpPriceVal"></span>
+<span style="font-size: 0.95rem; color: var(--muted); text-decoration: line-through;" id="pdpMrpVal"></span>
+<span style="background: #E8F5E9; color: #2E7D32; font-size: 0.74rem; font-weight: 700; padding: 3px 8px; border-radius: var(--radius-sm);" id="pdpOffVal"></span>
+</div>
+
+<!-- Color Swatches -->
+<div class="color-section">
+<div class="section-label">Select Color: <span id="pdpSelectedColorName" style="color: var(--accent);"></span></div>
+<div class="color-swatches" id="pdpColorsGroup"></div>
+</div>
+
+<!-- Sizes: S, M, L, XL, XXL, 3XL -->
+<div class="section-label">Select Size:</div>
+<div class="sizes-flex" id="pdpSizesGroup">
+<button class="size-btn-pill selected" onclick="pickPdpSize('S')">S</button>
+<button class="size-btn-pill" onclick="pickPdpSize('M')">M</button>
+<button class="size-btn-pill" onclick="pickPdpSize('L')">L</button>
+<button class="size-btn-pill" onclick="pickPdpSize('XL')">XL</button>
+<button class="size-btn-pill" onclick="pickPdpSize('XXL')">XXL</button>
+<button class="size-btn-pill" onclick="pickPdpSize('3XL')">3XL</button>
+</div>
+
+<!-- Dual Buttons -->
+<div class="pdp-actions-row">
+<button class="btn-action-bag" onclick="addCurrentPdp(false)">🛍️ Add to Bag</button>
+<button class="btn-action-order" onclick="addCurrentPdp(true)">⚡ Order Now</button>
+</div>
+
+<!-- Circular Pink Badges -->
+<div class="trust-badges-strip">
+<div class="trust-badge-item">
+<div class="trust-badge-circle">📦</div>
+<div class="trust-badge-title">Cash<span class="trust-badge-sub">On Delivery</span></div>
+</div>
+<div class="trust-badge-item">
+<div class="trust-badge-circle">🚚</div>
+<div class="trust-badge-title">Free<span class="trust-badge-sub">Shipping</span></div>
+</div>
+<div class="trust-badge-item">
+<div class="trust-badge-circle">🔄</div>
+<div class="trust-badge-title">Easy<span class="trust-badge-sub">Exchange</span></div>
+</div>
+<div class="trust-badge-item">
+<div class="trust-badge-circle">⏱️</div>
+<div class="trust-badge-title">24hrs<span class="trust-badge-sub">Dispatch</span></div>
+</div>
+</div>
+
+<!-- Closed Accordions -->
+<div class="accordion-group">
+<div class="accordion-box">
+<div class="accordion-header" onclick="togglePdpAccordion(this)">
+<span>Product Specifications</span><span class="acc-toggle-icon">+</span>
+</div>
+<div class="accordion-content">
+<ul class="spec-list" id="pdpSpecsList"></ul>
+</div>
+</div>
+<div class="accordion-box">
+<div class="accordion-header" onclick="togglePdpAccordion(this)">
+<span>Shipping & Exchange Policy</span><span class="acc-toggle-icon">+</span>
+</div>
+<div class="accordion-content">
+<ul class="spec-list">
+<li><span class="spec-bullet">✓</span> Dispatches within 24 business hours from our atelier.</li>
+<li><span class="spec-bullet">✓</span> Free express shipping across India on prepaid orders.</li>
+<li><span class="spec-bullet">✓</span> <strong>Doorstep Exchange Available:</strong> Free size exchange at your doorstep.</li>
+<li><span class="spec-bullet">✓</span> Cash on Delivery (COD) available with a ₹50 courier convenience fee.</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- Moving Reviews -->
+<div class="reviews-section">
+<div class="reviews-header">
+<span>Customer Reviews</span>
+<span style="font-size: 0.8rem; color: #2E7D32; font-weight: 700;">★ 4.9 Rating</span>
+</div>
+<div class="marquee-wrapper">
+<div class="marquee-track" id="reviewsTrack"></div>
+</div>
+</div>
+
+<!-- Similar Products -->
+<div class="similar-section">
+<h3 class="similar-title">You May Also Like</h3>
+<div class="similar-grid" id="similarGrid"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Sticky Mobile Dual Action Bar -->
+<div class="pdp-sticky-bar">
+<button class="btn-sticky-bag" onclick="addCurrentPdp(false)">🛍️ Add to Bag</button>
+<button class="btn-sticky-order" onclick="addCurrentPdp(true)">⚡ Order Now</button>
+</div>
+</section>
 
 <!-- Universal Footer -->
 <footer class="site-footer">
@@ -127,10 +1452,10 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 <div>
 <div class="footer-heading">Collections</div>
 <ul class="footer-links">
-<li><a href="javascript:void(0)" onclick="setCategory('Kurtas')">Kurtas & Sets</a></li>
-<li><a href="javascript:void(0)" onclick="setCategory('Dresses')">Western Dresses</a></li>
-<li><a href="javascript:void(0)" onclick="setCategory('Co-ords')">Co-ord Sets</a></li>
-<li><a href="javascript:void(0)" onclick="setCategory('Sarees')">Pure Silk Sarees</a></li>
+<li><a href="javascript:void(0)" onclick="openHomeView(); setCategory('Kurtas');">Kurtas & Sets</a></li>
+<li><a href="javascript:void(0)" onclick="openHomeView(); setCategory('Dresses');">Western Dresses</a></li>
+<li><a href="javascript:void(0)" onclick="openHomeView(); setCategory('Co-ords');">Co-ord Sets</a></li>
+<li><a href="javascript:void(0)" onclick="openHomeView(); setCategory('Sarees');">Pure Silk Sarees</a></li>
 </ul>
 </div>
 <div>
@@ -138,7 +1463,6 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 <ul class="footer-links">
 <li><a href="javascript:void(0)" onclick="openTrackModal()">Track Order</a></li>
 <li><a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()">Doorstep Exchange Request</a></li>
-<li><a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()">Customer Helpline</a></li>
 </ul>
 </div>
 <div>
@@ -161,6 +1485,16 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 </div>
 </footer>
 
+<!-- Track Order Modal -->
+<div class="track-modal-overlay" id="trackModal" onclick="closeTrackModal(event)">
+<div class="track-modal-box">
+<button class="header-icon-btn" style="position:absolute; top:12px; right:12px;" onclick="closeTrackModalDirect()">✕</button>
+<h3 style="font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 6px;">Track Your Order</h3>
+<input type="text" id="trackInput" class="cust-field" placeholder="Mobile Number or Order Code" style="margin-bottom: 12px; width: 100%;" />
+<button class="btn-wa-order" onclick="submitTrackingInquiry()">Track on WhatsApp</button>
+</div>
+</div>
+
 <!-- Shopping Bag Drawer -->
 <div class="drawer-scrim" id="drawerScrim" onclick="toggleBagDrawer(false)"></div>
 <aside class="bag-pane" id="bagDrawer">
@@ -178,17 +1512,13 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 <input type="text" id="couponInput" class="coupon-box-input" placeholder="e.g. FESTIVE20" />
 <button class="btn-apply" onclick="applyCoupon()">Apply</button>
 </div>
-<div class="pills-group">
-<span class="chip-code" onclick="quickCoupon('FESTIVE20')">FESTIVE20 (20% OFF)</span>
-<span class="chip-code" onclick="quickCoupon('WELCOME10')">WELCOME10 (10% OFF)</span>
-</div>
 <div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px; font-weight: 600;"></div>
 </div>
 <div class="address-section">
 <div class="form-heading">1. Delivery Address</div>
 <div class="cust-group">
 <input type="text" id="custName" class="cust-field" placeholder="Full Name *" />
-<input type="text" id="custAddr1" class="cust-field" placeholder="Address (House/Flat No., Street, Area) *" />
+<input type="text" id="custAddr1" class="cust-field" placeholder="Address (House/Flat No., Street) *" />
 <input type="text" id="custNearby" class="cust-field" placeholder="Nearby Landmark (Optional)" />
 <input type="tel" id="custPincode" class="cust-field" placeholder="6-Digit Pincode *" inputmode="numeric" maxlength="6" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" />
 <input type="tel" id="custPhone" class="cust-field" placeholder="Phone Number (10 digits) *" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" />
@@ -201,7 +1531,6 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 <input type="radio" name="payMethod" value="UPI" checked class="payment-radio" />
 <div class="payment-card-body">
 <div class="payment-card-title"><span>UPI / Online Payment</span><span style="color:#2E7D32;">FREE</span></div>
-<div class="pay-badge-list"><span class="pay-logo-badge badge-gpay">GPay</span><span class="pay-logo-badge badge-phonepe">PhonePe</span><span class="pay-logo-badge badge-paytm">Paytm</span></div>
 </div>
 </label>
 <label class="payment-card" id="payCardCod" onclick="selectPaymentMethod('COD')">
@@ -223,17 +1552,544 @@ Enter your 10-digit mobile number or order code below to check live tracking upd
 </div>
 </aside>
 
-<!-- Floating WhatsApp Chat -->
+<!-- Floating Chat Button -->
 <a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()" class="floating-chat-btn">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
 <span>Chat with Us</span>
 </a>
 
-<!-- Toast Notification -->
+<!-- Toast -->
 <div class="toast" id="toastNotice">Item added to your shopping bag!</div>
 
-<!-- Scripts -->
-<script src="js/supabase.js"></script>
-<script src="js/catalog.js"></script>
+<!-- SCRIPT LOGIC WITH BULLETPROOF DATA NORMALIZER -->
+<script>
+// --- 1. CONFIGURATION ---
+// If you have your Supabase URL & Key, enter them here; otherwise leave them as is
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+const WHATSAPP_PHONE = "919876543210";
+const CURRENCY = "₹";
+const COD_FEE = 50;
+
+let supabaseClient = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof supabase !== "undefined") {
+try {
+supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+console.warn("Supabase init failed, using built-in catalog:", e);
+}
+}
+
+// Default Fallback Products
+const fallbackCatalog = [
+{
+id: "ZY-101",
+title: "Mulmul Embroidered Anarkali Set",
+category: "Kurtas",
+price: 2499,
+mrp: 3499,
+tag: "Bestseller",
+rating: "4.9",
+reviews: "328",
+boughtThisMonth: "640+ bought this month",
+images: [
+"https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80",
+"https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=700&h=933&q=80"
+],
+colors: [
+{ name: "Sage Green", hex: "#8A9A86" },
+{ name: "Blush Pink", hex: "#E8C5C8" }
+],
+specs: [
+"Fabric: 100% Pure Breathable Mulmul Cotton",
+"Work: Intricate Handcrafted Chikankari & Mirror Lace",
+"Fit: Flared Anarkali Silhouette with Tassels",
+"Care: Hand wash gently in cold water"
+]
+},
+{
+id: "ZY-102",
+title: "Micro-Pleated Satin Evening Slip Dress",
+category: "Dresses",
+price: 2799,
+mrp: 3899,
+tag: "Trending",
+rating: "4.8",
+reviews: "214",
+boughtThisMonth: "420+ bought this month",
+images: [
+"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=700&h=933&q=80",
+"https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=700&h=933&q=80"
+],
+colors: [
+{ name: "Champagne Gold", hex: "#E6D3B3" },
+{ name: "Midnight Noir", hex: "#1C1B1A" }
+],
+specs: [
+"Fabric: Fluid Micro-Pleated Premium Heavy Satin",
+"Fit: Body-skimming contour drape that flows effortlessly",
+"Care: Dry clean only to preserve fine pleat memory"
+]
+},
+{
+id: "ZY-103",
+title: "Belgian Linen Blazer & Trouser Co-ord",
+category: "Co-ords",
+price: 3299,
+mrp: 4499,
+tag: "New",
+rating: "4.7",
+reviews: "186",
+boughtThisMonth: "310+ bought this month",
+images: [
+"https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=700&h=933&q=80",
+"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=700&h=933&q=80"
+],
+colors: [
+{ name: "Warm Oatmeal", hex: "#D6C7B2" },
+{ name: "Earthy Olive", hex: "#686D5A" }
+],
+specs: [
+"Fabric: Pure Washed Belgian Linen (Pre-shrunk)",
+"Fit: Relaxed single-breasted jacket & straight trousers",
+"Care: Machine wash gentle cycle"
+]
+},
+{
+id: "ZY-104",
+title: "Hand-Painted Floral Organza Saree",
+category: "Sarees",
+price: 4499,
+mrp: 5999,
+tag: "Exclusive",
+rating: "5.0",
+reviews: "92",
+boughtThisMonth: "190+ bought this month",
+images: [
+"https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=700&h=933&q=80",
+"https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80"
+],
+colors: [
+{ name: "Powder Pink", hex: "#F3D3D9" },
+{ name: "Sky Lavender", hex: "#DCD0E8" }
+],
+specs: [
+"Fabric: Lightweight translucent pure organza silk",
+"Borders: Fine scalloped golden resham embroidery",
+"Care: Dry clean recommended"
+]
+}
+];
+
+// --- 2. UNIVERSAL DATA NORMALIZER (PREVENTS ANY SUPABASE CRASH) ---
+function normalizeProduct(p) {
+// 1. Safe Images: checks 'images', 'image', 'image_url', 'img'
+let imgs = [];
+if (Array.isArray(p.images) && p.images.length > 0) {
+imgs = p.images;
+} else if (typeof p.images === 'string') {
+try {
+const parsed = JSON.parse(p.images);
+imgs = Array.isArray(parsed) ? parsed : [p.images];
+} catch {
+imgs = [p.images];
+}
+} else if (p.image || p.image_url || p.img) {
+imgs = [p.image || p.image_url || p.img];
+} else {
+imgs = ["https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80"];
+}
+
+// 2. Safe Price & MRP
+const priceNum = Number(p.price) || 1999;
+const mrpNum = Number(p.mrp || p.original_price || p.compare_at_price) || Math.round(priceNum * 1.35);
+
+// 3. Safe Colors
+let cols = [];
+if (Array.isArray(p.colors) && p.colors.length > 0) {
+cols = p.colors.map(c => typeof c === 'string' ? { name: c, hex: "#A86B58" } : c);
+} else {
+cols = [
+{ name: "Standard Color", hex: "#A86B58" },
+{ name: "Blush Tint", hex: "#E8C5C8" }
+];
+}
+
+// 4. Safe Specs
+let sp = [];
+if (Array.isArray(p.specs) && p.specs.length > 0) {
+sp = p.specs;
+} else if (typeof p.specs === 'string') {
+sp = p.specs.split('\n').filter(Boolean);
+} else {
+sp = [
+"Fabric: Breathable Sustainable Fabric",
+"Fit: Flattering Regular Silhouette",
+"Care: Gentle hand wash or dry clean"
+];
+}
+
+return {
+id: String(p.id || p.uuid || "PROD-" + Math.floor(Math.random()*1000)),
+title: p.title || p.name || "ZAYA Designer Piece",
+category: p.category || "All",
+price: priceNum,
+mrp: mrpNum,
+tag: p.tag || p.badge || "",
+rating: p.rating || "4.8",
+reviews: p.reviews || "154",
+boughtThisMonth: p.boughtThisMonth || p.bought_this_month || "300+ bought this month",
+images: imgs,
+colors: cols,
+specs: sp,
+description: p.description || p.desc || "Timeless handcrafted silhouette designed with premium breathable fabric."
+};
+}
+
+// --- 3. FETCH PRODUCTS (SUPABASE WITH FALLBACK) ---
+async function loadAllProducts() {
+if (supabaseClient) {
+try {
+const { data, error } = await supabaseClient.from('products').select('*');
+if (!error && data && data.length > 0) {
+console.log("Loaded products from Supabase:", data);
+return data.map(normalizeProduct);
+}
+} catch (err) {
+console.warn("Supabase fetch failed, using fallback:", err);
+}
+}
+return fallbackCatalog.map(normalizeProduct);
+}
+
+// Customer Reviews
+const customerReviews = [
+{ name: "Priya S.", city: "Delhi", stars: "★★★★★", text: "Got this for clg farewell last week.. fabric is pure mulmul not transparent at all. 10/10 fit for me" },
+{ name: "Ananya Mehta", city: "Mumbai", stars: "★★★★★", text: "delivered in 3 days in malad. colour is slightly darker thn pic but looks v pretty after wearing ❤️" },
+{ name: "Sneha P.", city: "Ahmedabad", stars: "★★★★★", text: "3xl size milna muskil hota h usually but this suit fits so comfortably at bust!! thnx zaya team" },
+{ name: "Ritu K.", city: "Kolkata", stars: "★★★★★", text: "honestly was scared to order from insta ad but quality is legit good.. ordered L size fits perfect" }
+];
+
+// State Variables
+let allProducts = [];
+let currentCategory = "All";
+let cart = JSON.parse(localStorage.getItem('zaya_cart') || '[]');
+let appliedCoupon = null;
+let selectedPayment = "UPI";
+let currentProduct = null;
+let currentSize = "S";
+let currentColor = null;
+let carouselTimers = {};
+
+// --- 4. RENDER CATALOG ---
+async function initStore() {
+allProducts = await loadAllProducts();
+renderCatalog();
+updateBagDisplay();
+}
+
+function renderCatalog() {
+Object.values(carouselTimers).forEach(timer => {
+clearTimeout(timer.timeout);
+clearInterval(timer.interval);
+});
+carouselTimers = {};
+
+const list = currentCategory === "All"
+? allProducts
+: allProducts.filter(p => p.category === currentCategory || currentCategory === "All");
+
+const grid = document.getElementById("productGrid");
+if (!grid) return;
+
+grid.innerHTML = list.map(item => {
+const offPct = Math.round(((item.mrp - item.price) / item.mrp) * 100);
+return `
+<article class="prod-card fade-up-in">
+<div class="carousel-box" onclick="showProductDetails('${item.id}')">
+${item.tag ? `<span class="tag-chip">${item.tag}</span>` : ''}
+<div class="carousel-track" id="track-${item.id}">
+${item.images.map(imgUrl => `
+<div class="carousel-slide"><img src="${imgUrl}" alt="${item.title}" loading="lazy"></div>
+`).join("")}
+</div>
+<div class="carousel-dots" id="dots-${item.id}">
+${item.images.map((_, i) => `<span class="c-dot ${i === 0 ? 'active' : ''}"></span>`).join("")}
+</div>
+</div>
+<div class="prod-info">
+<div class="rating-row">
+<span class="rating-stars">★ ${item.rating}</span>
+<span class="rating-count">(${item.reviews})</span>
+</div>
+<div class="bought-badge">🔥 ${item.boughtThisMonth}</div>
+<span class="prod-cat">${item.category}</span>
+<h3 class="prod-name" title="${item.title}">${item.title}</h3>
+<div class="prod-price-row">
+<span class="val-sale">${CURRENCY}${item.price.toLocaleString('en-IN')}</span>
+<span class="val-mrp">${CURRENCY}${item.mrp.toLocaleString('en-IN')}</span>
+<span class="val-off">${offPct}% OFF</span>
+</div>
+<button class="btn-add-cart-single" onclick="showProductDetails('${item.id}')">Add to Cart</button>
+</div>
+</article>
+`;
+}).join("");
+
+// Staggered Carousel
+const durations = [3200, 4200, 3600, 4800];
+list.forEach((item, index) => {
+const delay = 600 + (index * 500);
+startStaggeredCardSlide(item.id, item.images.length, delay, durations[index % durations.length]);
+});
+}
+
+function startStaggeredCardSlide(id, count, startDelay, cycleSpeed) {
+if (count <= 1) return;
+let activeIndex = 0;
+const track = document.getElementById(`track-${id}`);
+const dots = document.getElementById(`dots-${id}`);
+
+const timeoutId = setTimeout(() => {
+const intervalId = setInterval(() => {
+activeIndex = (activeIndex + 1) % count;
+if (track) track.style.transform = `translateX(-${activeIndex * 100}%)`;
+if (dots) {
+dots.querySelectorAll(".c-dot").forEach((d, i) => d.classList.toggle("active", i === activeIndex));
+}
+}, cycleSpeed);
+carouselTimers[id] = { interval: intervalId, timeout: null };
+}, startDelay);
+carouselTimers[id] = { timeout: timeoutId, interval: null };
+}
+
+function setCategory(cat) {
+currentCategory = cat;
+document.querySelectorAll(".cat-pill").forEach(btn => {
+btn.classList.toggle("active", btn.textContent.includes(cat) || (cat === "All" && btn.textContent.includes("All")));
+});
+renderCatalog();
+}
+
+// --- 5. PRODUCT DETAILS PAGE ---
+function showProductDetails(id) {
+const item = allProducts.find(p => p.id === id) || allProducts[0];
+if (!item) return;
+
+currentProduct = item;
+currentSize = "S";
+currentColor = item.colors[0].name;
+
+document.getElementById("pdpCatName").textContent = item.category;
+document.getElementById("pdpItemTitle").textContent = item.title;
+document.getElementById("pdpRatingStars").textContent = `★ ${item.rating}`;
+document.getElementById("pdpRatingReviews").textContent = `(${item.reviews} Reviews)`;
+document.getElementById("pdpBoughtStats").textContent = `🔥 ${item.boughtThisMonth}`;
+document.getElementById("pdpPriceVal").textContent = `${CURRENCY}${item.price.toLocaleString('en-IN')}`;
+document.getElementById("pdpMrpVal").textContent = `${CURRENCY}${item.mrp.toLocaleString('en-IN')}`;
+document.getElementById("pdpOffVal").textContent = `${Math.round(((item.mrp - item.price) / item.mrp) * 100)}% OFF`;
+
+const peekSlider = document.getElementById("pdpPeekSlider");
+peekSlider.innerHTML = item.images.map(img => `<div class="pdp-peek-slide"><img src="${img}" alt="${item.title}"></div>`).join("");
+peekSlider.scrollLeft = 0;
+
+document.getElementById("pdpSelectedColorName").textContent = currentColor;
+document.getElementById("pdpColorsGroup").innerHTML = item.colors.map((c, idx) => `
+<button class="color-swatch-btn ${idx === 0 ? 'selected' : ''}" style="background-color: ${c.hex};" onclick="pickPdpColor('${c.name}', this)"></button>
+`).join("");
+
+pickPdpSize("S");
+document.getElementById("pdpSpecsList").innerHTML = item.specs.map(spec => `<li><span class="spec-bullet">✓</span> ${spec}</li>`).join("");
+
+const track = document.getElementById("reviewsTrack");
+track.innerHTML = [...customerReviews, ...customerReviews].map(r => `
+<div class="review-bubble">
+<div class="review-user-row"><span class="review-name">${r.name} (${r.city})</span><span class="verified-chip">✓ Verified</span></div>
+<div class="review-stars">${r.stars}</div>
+<div class="review-comment">"${r.text}"</div>
+</div>
+`).join("");
+
+const similar = allProducts.filter(p => p.id !== item.id).slice(0, 4);
+document.getElementById("similarGrid").innerHTML = similar.map(p => `
+<div class="prod-card" style="cursor:pointer;" onclick="showProductDetails('${p.id}')">
+<div style="aspect-ratio:3/4; overflow:hidden;"><img src="${p.images[0]}" alt="${p.title}" style="width:100%; height:100%; object-fit:cover;"></div>
+<div style="padding:10px;">
+<div style="font-size:0.65rem; color:var(--muted);">${p.category}</div>
+<div style="font-size:0.82rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
+<div style="font-weight:700; font-size:0.9rem; margin-top:2px;">${CURRENCY}${p.price.toLocaleString('en-IN')}</div>
+</div>
+</div>
+`).join("");
+
+document.getElementById("catalogView").classList.remove("active");
+document.getElementById("pdpView").classList.add("active");
+window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function togglePdpAccordion(header) {
+const content = header.nextElementSibling;
+const icon = header.querySelector(".acc-toggle-icon");
+const isOpen = content.style.display === "block";
+content.style.display = isOpen ? "none" : "block";
+icon.textContent = isOpen ? "+" : "−";
+}
+
+function pickPdpColor(name, btn) {
+currentColor = name;
+document.getElementById("pdpSelectedColorName").textContent = name;
+document.querySelectorAll(".color-swatch-btn").forEach(b => b.classList.remove("selected"));
+btn.classList.add("selected");
+}
+
+function pickPdpSize(sz) {
+currentSize = sz;
+document.querySelectorAll(".size-btn-pill").forEach(b => b.classList.toggle("selected", b.textContent === sz));
+}
+
+function openHomeView() {
+document.getElementById("pdpView").classList.remove("active");
+document.getElementById("catalogView").classList.add("active");
+window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// --- 6. CART MANAGEMENT ---
+function addCurrentPdp(isDirect) {
+if (!currentProduct) return;
+const match = cart.find(c => c.id === currentProduct.id && c.size === currentSize && c.color === currentColor);
+if (match) match.qty += 1;
+else cart.push({ ...currentProduct, size: currentSize, color: currentColor, qty: 1 });
+localStorage.setItem('zaya_cart', JSON.stringify(cart));
+showToast(`Added: ${currentProduct.title} (${currentColor} / ${currentSize})`);
+updateBagDisplay();
+if (isDirect) toggleBagDrawer(true);
+}
+
+function toggleBagDrawer(open) {
+document.getElementById("bagDrawer").classList.toggle("open", open);
+document.getElementById("drawerScrim").classList.toggle("open", open);
+}
+document.getElementById("openBagTrigger").addEventListener("click", () => toggleBagDrawer(true));
+
+function changeQty(idx, delta) {
+cart[idx].qty += delta;
+if (cart[idx].qty <= 0) cart.splice(idx, 1);
+localStorage.setItem('zaya_cart', JSON.stringify(cart));
+updateBagDisplay();
+}
+
+function selectPaymentMethod(m) {
+selectedPayment = m;
+document.getElementById("payCardUpi").classList.toggle("active", m === "UPI");
+document.getElementById("payCardCod").classList.toggle("active", m === "COD");
+document.querySelector(`input[name="payMethod"][value="${m}"]`).checked = true;
+updateBagDisplay();
+}
+
+function applyCoupon() {
+const code = document.getElementById("couponInput").value.trim().toUpperCase();
+const status = document.getElementById("couponStatus");
+if (code === "FESTIVE20") {
+appliedCoupon = { code: "FESTIVE20", val: 20, type: "percent" };
+status.style.color = "#2E7D32";
+status.textContent = "✓ 20% Off Applied!";
+} else {
+appliedCoupon = null;
+status.style.color = "#D9534F";
+status.textContent = "Invalid code.";
+}
+updateBagDisplay();
+}
+
+function updateBagDisplay() {
+const totalCount = cart.reduce((sum, i) => sum + i.qty, 0);
+const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+document.getElementById("headerBagCount").textContent = totalCount;
+document.getElementById("drawerCount").textContent = totalCount;
+document.getElementById("ledgerSubtotal").textContent = `${CURRENCY}${subtotal.toLocaleString('en-IN')}`;
+
+let discount = (appliedCoupon && subtotal > 0) ? Math.round((subtotal * appliedCoupon.val) / 100) : 0;
+document.getElementById("ledgerDiscountRow").style.display = discount > 0 ? "flex" : "none";
+if (discount > 0) document.getElementById("ledgerDiscountVal").textContent = `-${CURRENCY}${discount.toLocaleString('en-IN')}`;
+
+const codExtra = (selectedPayment === "COD" && subtotal > 0) ? COD_FEE : 0;
+document.getElementById("ledgerCodRow").style.display = codExtra > 0 ? "flex" : "none";
+document.getElementById("ledgerTotal").textContent = `${CURRENCY}${Math.max(0, subtotal - discount + codExtra).toLocaleString('en-IN')}`;
+
+const container = document.getElementById("bagItemsContainer");
+const footer = document.getElementById("bagFooter");
+if (cart.length === 0) {
+container.innerHTML = `<div style="text-align:center; padding: 50px 10px; color: var(--muted);"><div style="font-size: 2rem;">🛍️</div><div>Your shopping bag is empty</div></div>`;
+footer.style.display = "none";
+return;
+}
+footer.style.display = "block";
+container.innerHTML = cart.map((item, idx) => `
+<div class="bag-row">
+<div class="bag-row-thumb"><img src="${item.images[0]}" alt="${item.title}"></div>
+<div class="bag-row-info">
+<div style="font-size: 0.84rem; font-weight: 600;">${item.title}</div>
+<div style="font-size: 0.72rem; color: var(--muted);">Color: <strong>${item.color}</strong> | Size: <strong>${item.size}</strong></div>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+<span style="font-weight:700;">${CURRENCY}${(item.price * item.qty).toLocaleString('en-IN')}</span>
+<div class="qty-wrap">
+<button class="step-btn" onclick="changeQty(${idx}, -1)">−</button>
+<span style="font-size:0.85rem; font-weight:600;">${item.qty}</span>
+<button class="step-btn" onclick="changeQty(${idx}, 1)">+</button>
+</div>
+</div>
+</div>
+</div>
+`).join("");
+}
+
+function submitOrderToWhatsApp() {
+if (cart.length === 0) return alert("Your bag is empty.");
+const name = document.getElementById("custName").value.trim();
+const addr1 = document.getElementById("custAddr1").value.trim();
+const pincode = document.getElementById("custPincode").value.trim();
+const phone = document.getElementById("custPhone").value.trim();
+
+if (!name || !addr1 || !/^\d{6}$/.test(pincode) \vert{}\vert{} !/^\d{10}$/.test(phone)) {
+return alert("Please fill in Name, Address, valid 6-digit Pincode, and 10-digit Phone.");
+}
+
+const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+let discount = (appliedCoupon && subtotal > 0) ? Math.round((subtotal * appliedCoupon.val) / 100) : 0;
+const codExtra = (selectedPayment === "COD") ? COD_FEE : 0;
+const payable = Math.max(0, subtotal - discount + codExtra);
+
+const items = cart.map((item, i) => `${i + 1}. *${item.title}*\n Color: ${item.color} | Size: ${item.size} | Qty: ${item.qty} | Price: ${CURRENCY}${item.price * item.qty}`).join("\n\n");
+const msg = `✨ *NEW ORDER — ZAYA BOUTIQUE* ✨\n\n*CUSTOMER DETAILS:*\n• Name: ${name}\n• Phone: ${phone}\n• Address: ${addr1}\n• Pincode: ${pincode}\n\n*ORDERED ITEMS:*\n${items}\n\n*PAYMENT:* ${selectedPayment === "COD" ? "Cash on Delivery (+₹50 fee)" : "UPI / Online Payment (FREE)"}\n*TOTAL PAYABLE:* ${CURRENCY}${payable.toLocaleString('en-IN')}`;
+
+window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+}
+
+function toggleSidebar(open) {
+document.getElementById("mobileSidebar").classList.toggle("open", open);
+document.getElementById("sidebarOverlay").classList.toggle("open", open);
+}
+function openTrackModal() { document.getElementById("trackModal").style.display = "flex"; }
+function closeTrackModalDirect() { document.getElementById("trackModal").style.display = "none"; }
+function closeTrackModal(e) { if (e.target.id === "trackModal") closeTrackModalDirect(); }
+function submitTrackingInquiry() {
+const val = document.getElementById("trackInput").value.trim();
+if (!val) return alert("Please enter your Phone Number or Order Code.");
+window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(`Hi ZAYA, please track my order for Mobile/Code: ${val}`)}`, "_blank");
+closeTrackModalDirect();
+}
+function openGeneralChatWhatsApp() {
+window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent("Hi ZAYA Team, I need help with an order.")}`, "_blank");
+}
+function showToast(msg) {
+const toast = document.getElementById("toastNotice");
+toast.textContent = `✓ ${msg}`;
+toast.classList.add("show");
+setTimeout(() => toast.classList.remove("show"), 1400);
+}
+
+// Launch store
+initStore();
+</script>
 </body>
 </html>
