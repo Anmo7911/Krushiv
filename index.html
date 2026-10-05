@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>ZAYA | Women's Pret & Couture</title>
+<title>KRUSHIV | Women's Pret & Couture</title>
 
 <!-- Main Stylesheet -->
-<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="/css/styles.css" />
 
 <!-- Supabase JS Client via Official CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,9 +18,15 @@
 Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
 </div>
 
-<!-- 2. STICKY HEADER WITH ICONS (BAG -> PROFILE -> 3 LINES) -->
+<!-- 2. STICKY HEADER WITH LOGO IMAGE & ICONS -->
 <header class="header">
-<div class="brand-logo" onclick="openHomeView()">ZAYA</div>
+<a href="javascript:void(0)" class="brand-logo" onclick="openHomeView()" aria-label="KRUSHIV Home" style="display:flex; align-items:center;">
+<img
+src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEinQyEJio3FDgtzZzyV61f2RZr3avyB-bfU3PSrF1mMD8g4ZyuH4n3bR7aVWIvtSwBAEc3GkB13zM9Rqz78o7jWtoxyYhYAvJO_N3s2i784a2VEPOQvOfxi1HS_ht3Z0-q0TuQcEZh8AaJnk7akYTz2iNjKquTgqd311DnIsRTmNE6xAP3Egvk9rplK1N0k/s632/24CA3E64-D8B2-42D2-BBF8-3040FF8D367E_birefnet.png"
+alt="KRUSHIV Logo"
+style="height: 38px; width: auto; object-fit: contain; display: block;"
+/>
+</a>
 
 <div class="header-actions-right">
 <!-- 1. Bag Icon (with Count Badge) -->
@@ -56,7 +62,13 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 <aside class="mobile-sidebar" id="mobileSidebar">
 <div class="sidebar-header">
-<div class="sidebar-brand">ZAYA</div>
+<div class="sidebar-brand">
+<img
+src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEinQyEJio3FDgtzZzyV61f2RZr3avyB-bfU3PSrF1mMD8g4ZyuH4n3bR7aVWIvtSwBAEc3GkB13zM9Rqz78o7jWtoxyYhYAvJO_N3s2i784a2VEPOQvOfxi1HS_ht3Z0-q0TuQcEZh8AaJnk7akYTz2iNjKquTgqd311DnIsRTmNE6xAP3Egvk9rplK1N0k/s632/24CA3E64-D8B2-42D2-BBF8-3040FF8D367E_birefnet.png"
+alt="KRUSHIV Logo"
+style="height: 32px; width: auto; object-fit: contain;"
+/>
+</div>
 <button class="header-icon-btn" onclick="toggleSidebar(false)" aria-label="Close Sidebar">
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
@@ -67,9 +79,9 @@ Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code
 <div class="sidebar-content">
 <!-- Profile Quick Card -->
 <div class="sidebar-profile-card">
-<div class="sidebar-avatar">Z</div>
+<div class="sidebar-avatar">K</div>
 <div>
-<div class="sidebar-user-name">Welcome to ZAYA</div>
+<div class="sidebar-user-name">Welcome to KRUSHIV</div>
 <div class="sidebar-user-action" onclick="openTrackModal()">Track My Orders →</div>
 </div>
 </div>
@@ -164,14 +176,12 @@ Track on WhatsApp
 VIEW 1: CATALOG VIEW
 ========================================== -->
 <section id="catalogView" class="view-container active">
-<!-- Hero Banner with Fade-Up -->
 <div class="hero-card fade-up-init">
 <div class="hero-tag">New Season '26</div>
 <h1 class="hero-title">Timeless Grace & Modern Pret</h1>
 <p class="hero-desc">Bespoke kurtas, coordinated sets, and flowing silk silhouettes. Tap Add to Cart to pick your color & size, and order on WhatsApp.</p>
 </div>
 
-<!-- Category Filters -->
 <div class="cat-scroll fade-up-init">
 <button class="cat-pill active" onclick="setCategory('All')">All Pieces</button>
 <button class="cat-pill" onclick="setCategory('Kurtas')">Kurtas & Sets</button>
@@ -180,11 +190,8 @@ VIEW 1: CATALOG VIEW
 <button class="cat-pill" onclick="setCategory('Sarees')">Pure Silk & Sarees</button>
 </div>
 
-<!-- Dynamic Product Grid (Injected from Supabase) -->
 <main class="main-wrap">
-<div class="grid-layout" id="productGrid">
-<!-- Products load here dynamically -->
-</div>
+<div class="grid-layout" id="productGrid"></div>
 </main>
 </section>
 
@@ -199,22 +206,17 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 
 <div class="pdp-split">
-<!-- 1. Media Gallery: 90% / 10% Peek Slider -->
 <div class="pdp-media-pane">
 <div class="pdp-peek-slider-wrapper">
-<div class="pdp-peek-slider" id="pdpPeekSlider">
-<!-- Slides injected here -->
-</div>
+<div class="pdp-peek-slider" id="pdpPeekSlider"></div>
 <div class="swipe-hint-pill">👉 Swipe left to see more photos</div>
 </div>
 </div>
 
-<!-- 2. Product Details & Sequential Flow -->
 <div class="pdp-info-pane">
 <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--accent); font-weight: 700; letter-spacing: 0.08em;" id="pdpCatName"></div>
 <h1 class="pdp-heading" id="pdpItemTitle"></h1>
 
-<!-- Ratings & Monthly Bought Badge -->
 <div class="pdp-rating-strip">
 <span class="rating-stars" id="pdpRatingStars">★ 4.9</span>
 <span class="rating-count" id="pdpRatingReviews">(0 Reviews)</span>
@@ -227,26 +229,14 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 <span style="background: #E8F5E9; color: #2E7D32; font-size: 0.74rem; font-weight: 700; padding: 3px 8px; border-radius: var(--radius-sm);" id="pdpOffVal"></span>
 </div>
 
-<!-- Color Swatches Section -->
 <div class="color-section">
 <div class="section-label">Select Color: <span id="pdpSelectedColorName" style="color: var(--accent); text-transform: none;"></span></div>
-<div class="color-swatches" id="pdpColorsGroup">
-<!-- Swatches injected here -->
-</div>
+<div class="color-swatches" id="pdpColorsGroup"></div>
 </div>
 
-<!-- Size Selector: S, M, L, XL, XXL, 3XL -->
 <div class="section-label">Select Size:</div>
-<div class="sizes-flex" id="pdpSizesGroup">
-<button class="size-btn-pill selected" onclick="pickPdpSize('S')">S</button>
-<button class="size-btn-pill" onclick="pickPdpSize('M')">M</button>
-<button class="size-btn-pill" onclick="pickPdpSize('L')">L</button>
-<button class="size-btn-pill" onclick="pickPdpSize('XL')">XL</button>
-<button class="size-btn-pill" onclick="pickPdpSize('XXL')">XXL</button>
-<button class="size-btn-pill" onclick="pickPdpSize('3XL')">3XL</button>
-</div>
+<div class="sizes-flex" id="pdpSizesGroup"></div>
 
-<!-- INLINE DUAL BUTTONS -->
 <div class="pdp-actions-row">
 <button class="btn-action-bag" onclick="addCurrentPdp(false)">
 🛍️ Add to Bag
@@ -256,7 +246,6 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </button>
 </div>
 
-<!-- 3. CIRCULAR PINK TRUST BADGES -->
 <div class="trust-badges-strip">
 <div class="trust-badge-item">
 <div class="trust-badge-circle">📦</div>
@@ -276,7 +265,6 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 </div>
 
-<!-- 4. ACCORDIONS -->
 <div class="accordion-group">
 <div class="accordion-box">
 <div class="accordion-header" onclick="togglePdpAccordion(this)">
@@ -284,9 +272,7 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 <span class="acc-toggle-icon">+</span>
 </div>
 <div class="accordion-content">
-<ul class="spec-list" id="pdpSpecsList">
-<!-- Specs injected here -->
-</ul>
+<ul class="spec-list" id="pdpSpecsList"></ul>
 </div>
 </div>
 
@@ -306,32 +292,25 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 </div>
 
-<!-- REVIEWS CAROUSEL -->
 <div class="reviews-section">
 <div class="reviews-header">
 <span>Customer Reviews</span>
 <span style="font-size: 0.8rem; color: #2E7D32; font-weight: 700;">★ 4.9 Rating</span>
 </div>
 <div class="marquee-wrapper">
-<div class="marquee-track" id="reviewsTrack">
-<!-- Reviews injected here -->
-</div>
+<div class="marquee-track" id="reviewsTrack"></div>
 </div>
 </div>
 
-<!-- SIMILAR PRODUCTS SECTION -->
 <div class="similar-section">
 <h3 class="similar-title">You May Also Like</h3>
-<div class="similar-grid" id="similarGrid">
-<!-- Similar items injected here -->
-</div>
+<div class="similar-grid" id="similarGrid"></div>
 </div>
 
 </div>
 </div>
 </div>
 
-<!-- STICKY BOTTOM BAR ON MOBILE PDP -->
 <div class="pdp-sticky-bar">
 <button class="btn-sticky-bag" onclick="addCurrentPdp(false)">
 🛍️ Add to Bag
@@ -348,7 +327,13 @@ UNIVERSAL FOOTER
 <footer class="site-footer">
 <div class="footer-inner">
 <div>
-<div class="footer-brand">ZAYA</div>
+<div class="footer-brand">
+<img
+src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEinQyEJio3FDgtzZzyV61f2RZr3avyB-bfU3PSrF1mMD8g4ZyuH4n3bR7aVWIvtSwBAEc3GkB13zM9Rqz78o7jWtoxyYhYAvJO_N3s2i784a2VEPOQvOfxi1HS_ht3Z0-q0TuQcEZh8AaJnk7akYTz2iNjKquTgqd311DnIsRTmNE6xAP3Egvk9rplK1N0k/s632/24CA3E64-D8B2-42D2-BBF8-3040FF8D367E_birefnet.png"
+alt="KRUSHIV"
+style="height: 38px; width: auto; object-fit: contain; margin-bottom: 6px; filter: brightness(0) invert(1);"
+/>
+</div>
 <p class="footer-desc">
 Redefining contemporary women's couture and festive pret. Handcrafted breathable fabrics, authentic embroidery, and silhouettes designed to empower effortless elegance.
 </p>
@@ -389,7 +374,7 @@ Redefining contemporary women's couture and festive pret. Handcrafted breathable
 
 <div class="footer-payment-strip">
 <div class="copyright-text">
-© 2026 ZAYA ATELIER. All rights reserved. Designed for mobile-first shopping.
+© 2026 KRUSHIV ATELIER. All rights reserved. Designed for mobile-first shopping.
 </div>
 <div class="footer-pay-badges">
 <span class="footer-badge">UPI</span>
@@ -424,34 +409,26 @@ SHOPPING BAG / WHATSAPP CHECKOUT DRAWER
 </button>
 </div>
 
-<div class="bag-items-scroll" id="bagItemsContainer">
-<!-- Items dynamically populated -->
-</div>
+<div class="bag-items-scroll" id="bagItemsContainer"></div>
 
-<!-- Checkout Footer -->
 <div class="bag-footer" id="bagFooter">
-<!-- Coupon Section -->
 <div class="coupon-section">
 <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase;">Promo / Coupon Code</div>
 <div class="coupon-row">
 <input type="text" id="couponInput" class="coupon-box-input" placeholder="e.g. FESTIVE20" />
 <button class="btn-apply" onclick="applyCoupon()">Apply</button>
 </div>
-<div class="pills-group">
-<span class="chip-code" onclick="quickCoupon('FESTIVE20')">FESTIVE20 (20% OFF)</span>
-<span class="chip-code" onclick="quickCoupon('WELCOME10')">WELCOME10 (10% OFF)</span>
-<span class="chip-code" onclick="quickCoupon('FLAT500')">FLAT500</span>
-</div>
+<div class="pills-group"></div>
 <div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px; font-weight: 600;"></div>
 </div>
 
-<!-- 5-BOX ADDRESS FORM -->
 <div class="address-section">
 <div class="form-heading">1. Delivery Address</div>
 <div class="cust-group">
 <input type="text" id="custName" class="cust-field" placeholder="Full Name *" />
 <input type="text" id="custAddr1" class="cust-field" placeholder="Address (Flat / House No. / Street / Area) *" />
 <input type="text" id="custNearby" class="cust-field" placeholder="Nearby Landmark (Optional)" />
+
 <input
 type="tel"
 id="custPincode"
@@ -461,6 +438,7 @@ inputmode="numeric"
 maxlength="6"
 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
 />
+
 <input
 type="tel"
 id="custPhone"
@@ -473,7 +451,6 @@ oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
 </div>
 </div>
 
-<!-- PAYMENT METHOD SELECTION -->
 <div class="payment-section">
 <div class="form-heading">2. Select Payment Method</div>
 <div class="payment-options-row">
@@ -508,7 +485,6 @@ oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
 </div>
 </div>
 
-<!-- Price Ledger -->
 <div class="price-ledger">
 <div class="ledger-row">
 <span>Bag Subtotal:</span>
@@ -532,7 +508,6 @@ oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
 </div>
 </div>
 
-<!-- ORDER BUTTON -->
 <button class="btn-wa-order" onclick="submitOrderToWhatsApp()">
 Order on WhatsApp
 </button>
@@ -549,7 +524,7 @@ Order on WhatsApp
 <div class="toast" id="toastNotice">Item added to your shopping bag!</div>
 
 <!-- Application Logic -->
-<script src="js/supabase.js"></script>
-<script src="js/store.js"></script>
+<script src="/js/supabase.js"></script>
+<script src="/js/store.js"></script>
 </body>
 </html>
