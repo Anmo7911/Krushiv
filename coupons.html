@@ -79,21 +79,49 @@ tr:hover { background: #FCFAF7; }
 </div>
 </div>
 
-<!-- 1. TOP ANNOUNCEMENT BANNER -->
+<!-- 1. TOP ANNOUNCEMENT OFFER BAR & COUNTDOWN TIMER -->
 <div class="card">
-<h2 class="card-title">1. Live Storefront Top Announcement Bar</h2>
+<h2 class="card-title">1. Live Store Announcement Banner & Countdown Timer</h2>
 <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
-Change the top announcement banner that runs across the very top of your store live without re-deploying code.
+Control the announcement bar text and the live urgency countdown timer shown at the very top of your storefront.
 </p>
-<div style="display: flex; gap: 8px; flex-wrap: wrap;">
-<input type="text" id="topBarInput" class="input" style="flex: 1; min-width: 280px;" placeholder="Festive Pret Collection • Easy Doorstep Exchange • Use Code FESTIVE20 for 20% Off" />
-<button class="btn btn-dark" onclick="saveTopBarText()">Save Banner</button>
+
+<div class="form-grid">
+<div class="form-group full">
+<label class="label">Top Announcement Banner Text</label>
+<input type="text" id="topBarInput" class="input" placeholder="Festive Pret Collection • Easy Doorstep Exchange • Use Code FESTIVE20 for 20% Off" />
+</div>
+
+<div class="form-group">
+<label class="label">Countdown Sale End Date & Time</label>
+<input type="datetime-local" id="countdownInput" class="input" />
+<span class="hint">Leave empty if you don't want a timer displayed.</span>
+</div>
+
+<div class="form-group" style="justify-content: flex-end;">
+<button class="btn btn-dark" style="height: 42px; justify-content: center;" onclick="saveTopBarAndTimer()">Save Banner & Timer</button>
+</div>
 </div>
 </div>
 
-<!-- 2. COUPON FORM -->
+<!-- 2. PINCODE / COD SERVICEABILITY CHECKER SETTINGS -->
 <div class="card">
-<h2 class="card-title">2. Add or Edit Coupon Code</h2>
+<h2 class="card-title">2. COD Serviceability & Blocked Pincodes</h2>
+<p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
+Enter any pincodes (comma or line-separated) where you do NOT want Cash on Delivery allowed (orders to these pincodes will be restricted to prepaid UPI only).
+</p>
+<div class="form-group full">
+<label class="label">Blocked / Non-COD Pincodes (Optional)</label>
+<textarea id="blockedPincodesInput" class="input" rows="2" placeholder="e.g. 110099, 400099, 560099"></textarea>
+<div style="margin-top: 8px;">
+<button class="btn btn-dark" onclick="saveBlockedPincodes()">Save Pincode Rules</button>
+</div>
+</div>
+</div>
+
+<!-- 3. COUPON CREATION FORM -->
+<div class="card">
+<h2 class="card-title" id="couponFormTitle">3. Add or Edit Coupon Code</h2>
 <form id="couponForm" onsubmit="handleSaveCoupon(event)">
 <div class="form-grid">
 <div class="form-group">
@@ -133,7 +161,7 @@ Change the top announcement banner that runs across the very top of your store l
 </form>
 </div>
 
-<!-- 3. TABLE -->
+<!-- 4. EXISTING COUPONS TABLE -->
 <div class="card">
 <h2 class="card-title">Coupons in Database (<span id="couponCount">0</span>)</h2>
 <div class="table-wrap">
@@ -168,7 +196,7 @@ window.location.href = "/admin";
 return;
 }
 document.getElementById("userDisplay").textContent = "Logged in: " + session.user.email;
-loadTopBarSetting();
+loadStoreSettings();
 loadCoupons();
 }
 
@@ -187,33 +215,56 @@ input.removeAttribute("max");
 }
 }
 
-async function loadTopBarSetting() {
+async function loadStoreSettings() {
 const { data } = await supabaseClient
 .from("store_settings")
-.select("value")
-.eq("key", "top_bar_text")
-.maybeSingle();
+.select("*");
 
-if (data && data.value) {
-document.getElementById("topBarInput").value = data.value;
+if (data) {
+data.forEach(item => {
+if (item.key === "top_bar_text") {
+document.getElementById("topBarInput").value = item.value;
+} else if (item.key === "countdown_end") {
+document.getElementById("countdownInput").value = item.value;
+} else if (item.key === "blocked_cod_pincodes") {
+try {
+const list = JSON.parse(item.value || "[]");
+document.getElementById("blockedPincodesInput").value = list.join(", ");
+} catch(e) {}
+}
+});
 }
 }
 
-async function saveTopBarText() {
+async function saveTopBarAndTimer() {
 const text = document.getElementById("topBarInput").value.trim();
+const countdown = document.getElementById("countdownInput").value;
+
 if (!text) {
 alert("Please enter banner text.");
 return;
 }
 
+await supabaseClient.from("store_settings").upsert([
+{ key: "top_bar_text", value: text },
+{ key: "countdown_end", value: countdown }
+]);
+
+showToast("Banner & Countdown timer updated live!");
+}
+
+async function saveBlockedPincodes() {
+const raw = document.getElementById("blockedPincodesInput").value;
+const list = raw.split(/[\n,]/).map(p => p.trim()).filter(p => /^\d{6}$/.test(p));
+
 const { error } = await supabaseClient
 .from("store_settings")
-.upsert({ key: "top_bar_text", value: text });
+.upsert({ key: "blocked_cod_pincodes", value: JSON.stringify(list) });
 
 if (error) {
-alert("Error saving banner: " + error.message);
+alert("Error saving: " + error.message);
 } else {
-showToast("Top offer banner updated live!");
+showToast("Blocked pincodes list updated (" + list.length + " pincodes)!");
 }
 }
 
