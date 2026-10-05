@@ -5,8 +5,10 @@ const WHATSAPP_PHONE = "919876543210"; // Enter your WhatsApp phone number with 
 const CURRENCY = "₹";
 const COD_FEE = 50;
 
-// DYNAMIC COUPONS FROM SUPABASE
+// DYNAMIC CONFIG & COUPONS FROM SUPABASE
 let activeCoupons = {};
+let blockedCodPincodes = [];
+let countdownTimerInterval = null;
 
 // REVIEWS
 const customerReviews = [
@@ -33,29 +35,81 @@ let carouselTimers = {};
 let toastTimer = null;
 
 // -------------------------------------------------------------
-// 2. FETCH STORE SETTINGS, COUPONS & PRODUCTS
+// 2. FETCH STORE SETTINGS, TIMER, COUPONS & PRODUCTS
 // -------------------------------------------------------------
 async function initStore() {
 loadStoreSettings();
 loadCouponsFromDb();
 loadProductsFromSupabase();
+setupPincodeListener();
 }
 
 async function loadStoreSettings() {
 try {
 const { data } = await supabaseClient
 .from("store_settings")
-.select("value")
-.eq("key", "top_bar_text")
-.maybeSingle();
+.select("*");
 
-if (data && data.value) {
+let topText = "";
+let countdownEnd = null;
+
+if (data) {
+data.forEach(item => {
+if (item.key === "top_bar_text") topText = item.value;
+if (item.key === "countdown_end") countdownEnd = item.value;
+if (item.key === "blocked_cod_pincodes") {
+try { blockedCodPincodes = JSON.parse(item.value || "[]"); } catch(e) {}
+}
+});
+}
+
 const bar = document.querySelector(".top-bar");
-if (bar) bar.innerHTML = data.value;
+if (bar && topText) {
+bar.innerHTML = `<span id="topBarMainText">${topText}</span> <span id="topBarTimerBadge" style="margin-left: 8px; background: #A86B58; padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-block;"></span>`;
+if (countdownEnd) {
+startCountdownTimer(countdownEnd);
+}
 }
 } catch (e) {
-console.warn("Using default top bar text");
+console.warn("Using default top bar settings", e);
 }
+}
+
+// E. ANNOUNCEMENT BAR COUNTDOWN TIMER
+function startCountdownTimer(endTimeStr) {
+if (!endTimeStr) return;
+const targetDate = new Date(endTimeStr).getTime();
+if (isNaN(targetDate)) return;
+
+if (countdownTimerInterval) clearInterval(countdownTimerInterval);
+
+function update() {
+const now = Date.now();
+const diff = targetDate - now;
+const badge = document.getElementById("topBarTimerBadge");
+if (!badge) return;
+
+if (diff <= 0) {
+badge.textContent = "SALE ENDED";
+clearInterval(countdownTimerInterval);
+return;
+}
+
+const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+const pad = n => String(n).padStart(2, '0');
+if (days > 0) {
+badge.textContent = `⏳ Ends in ${days}d ${pad(hours)}h ${pad(mins)}m`;
+} else {
+badge.textContent = `⚡ Ends in ${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+}
+}
+
+update();
+countdownTimerInterval = setInterval(update, 1000);
 }
 
 async function loadCouponsFromDb() {
@@ -116,14 +170,25 @@ const { data, error } = await supabaseClient
 
 if (error) throw error;
 
-products = (data || []).map(p => ({
+products = (data || []).map(p => {
+let sizesStock = { S: true, M: true, L: true, XL: true, XXL: true, "3XL": true };
+try {
+if (p.sizes_stock) {
+sizesStock = typeof p.sizes_stock === "string" ? JSON.parse(p.sizes_stock) : p.sizes_stock;
+}
+} catch(e) {}
+
+return {
 ...p,
 price: Number(p.price),
 mrp: Number(p.mrp),
+stock_qty: (p.stock_qty !== undefined && p.stock_qty !== null) ? Number(p.stock_qty) : 10,
+sizes_stock: sizesStock,
 images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
 colors: Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors || '[]'),
 specs: Array.isArray(p.specs) ? p.specs : JSON.parse(p.specs || '[]')
-}));
+};
+});
 
 renderCatalog();
 handleUrlRouting();
@@ -187,7 +252,7 @@ document.querySelectorAll('.fade-up-init').forEach(el => observer.observe(el));
 }
 
 // -------------------------------------------------------------
-// 5. RENDER CATALOG
+// 5. RENDER CATALOG (WITH STOCK LEFT / OUT OF STOCK BADGES)
 // -------------------------------------------------------------
 function renderCatalog() {
 Object.values(carouselTimers).forEach(timer => {
@@ -217,10 +282,22 @@ grid.innerHTML = list.map(item => {
 const offPct = item.mrp > item.price ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0;
 const firstImg = item.images[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80';
 
+const isOutOfStock = item.stock_qty <= 0;
+const isLowStock = !isOutOfStock && item.stock_qty <= 5;
+
+let stockChip = "";
+if (isOutOfStock) {
+stockChip = `<span class="tag-chip" style="background:#B91C1C; color:#fff;">Out of Stock</span>`;
+} else if (isLowStock) {
+stockChip = `<span class="tag-chip" style="background:#FEF3C7; color:#B45309;">Only ${item.stock_qty} left!</span>`;
+} else if (item.tag) {
+stockChip = `<span class="tag-chip">${item.tag}</span>`;
+}
+
 return `
-<article class="prod-card fade-up-init">
+<article class="prod-card fade-up-init" style="${isOutOfStock ? 'opacity: 0.85;' : ''}">
 <div class="carousel-box" onclick="showProductDetails('${item.id}')">
-${item.tag ? `<span class="tag-chip">${item.tag}</span>` : ''}
+${stockChip}
 
 <div class="carousel-track" id="track-${item.id}">
 ${(item.images.length > 0 ? item.images : [firstImg]).map(imgUrl => `
@@ -251,8 +328,8 @@ ${item.mrp > item.price ? `<span class="val-mrp">${CURRENCY}${item.mrp.toLocaleS
 ${offPct > 0 ? `<span class="val-off">${offPct}% OFF</span>` : ''}
 </div>
 
-<button class="btn-add-cart-single" onclick="showProductDetails('${item.id}')">
-Add to Cart
+<button class="btn-add-cart-single" onclick="showProductDetails('${item.id}')" style="${isOutOfStock ? 'background:#666; border-color:#666;' : ''}">
+${isOutOfStock ? 'View (Sold Out)' : 'Add to Cart'}
 </button>
 </div>
 </article>
@@ -307,14 +384,13 @@ renderCatalog();
 }
 
 // -------------------------------------------------------------
-// 7. PRODUCT DETAILS PAGE (PDP)
+// 7. PRODUCT DETAILS PAGE (PDP) WITH SIZE-LEVEL STOCK & PRODUCT LEFT
 // -------------------------------------------------------------
 function showProductDetails(id) {
 const item = products.find(p => p.id === id);
 if (!item) return;
 
 currentProduct = item;
-currentSize = "S";
 currentColor = (item.colors && item.colors.length > 0) ? item.colors[0].name : "Standard";
 
 document.getElementById("pdpCatName").textContent = item.category;
@@ -322,9 +398,22 @@ document.getElementById("pdpItemTitle").textContent = item.title;
 document.getElementById("pdpRatingStars").textContent = `★ ${item.rating || '4.9'}`;
 document.getElementById("pdpRatingReviews").textContent = `(${item.reviews || '0'} Reviews)`;
 
+// Stock Left badge
 const boughtElem = document.getElementById("pdpBoughtStats");
-if (item.bought_this_month) {
+if (item.stock_qty <= 0) {
+boughtElem.textContent = "❌ Out of Stock";
+boughtElem.style.background = "#FEE2E2";
+boughtElem.style.color = "#B91C1C";
+boughtElem.style.display = "inline-block";
+} else if (item.stock_qty <= 5) {
+boughtElem.textContent = `🔥 Only ${item.stock_qty} pieces left in stock — selling fast!`;
+boughtElem.style.background = "#FEF3C7";
+boughtElem.style.color = "#B45309";
+boughtElem.style.display = "inline-block";
+} else if (item.bought_this_month) {
 boughtElem.textContent = `🔥 ${item.bought_this_month}`;
+boughtElem.style.background = "#FEF3C7";
+boughtElem.style.color = "#B45309";
 boughtElem.style.display = "inline-block";
 } else {
 boughtElem.style.display = "none";
@@ -342,6 +431,7 @@ offElem.style.display = "inline-block";
 offElem.style.display = "none";
 }
 
+// Peek Slider
 const peekSlider = document.getElementById("pdpPeekSlider");
 const displayImages = item.images.length > 0 ? item.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80'];
 peekSlider.innerHTML = displayImages.map(img => `
@@ -351,6 +441,7 @@ peekSlider.innerHTML = displayImages.map(img => `
 `).join("");
 peekSlider.scrollLeft = 0;
 
+// Colors
 const colorGroup = document.getElementById("pdpColorsGroup");
 document.getElementById("pdpSelectedColorName").textContent = currentColor;
 if (item.colors && item.colors.length > 0) {
@@ -367,8 +458,10 @@ onclick="pickPdpColor('${c.name}', this)">
 colorGroup.parentElement.style.display = "none";
 }
 
-pickPdpSize("S");
+// A. SIZE-LEVEL STOCK MANAGEMENT
+renderSizeSelectors(item);
 
+// Specs
 const specsList = document.getElementById("pdpSpecsList");
 if (item.specs && item.specs.length > 0) {
 specsList.innerHTML = item.specs.map(spec => `
@@ -387,6 +480,8 @@ el.style.transform = "rotate(0deg)";
 renderReviewsMarquee();
 renderSimilarProducts(item);
 
+updatePdpActionButtons(item);
+
 document.getElementById("catalogView").classList.remove("active");
 document.getElementById("pdpView").classList.add("active");
 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -394,6 +489,82 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 if (item.slug) {
 window.history.pushState({}, "", `?p=${item.slug}`);
 }
+}
+
+function renderSizeSelectors(item) {
+const sizesGroup = document.getElementById("pdpSizesGroup");
+if (!sizesGroup) return;
+
+const allSizes = ["S", "M", "L", "XL", "XXL", "3XL"];
+const stockMap = item.sizes_stock || {};
+
+const firstAvailable = allSizes.find(sz => stockMap[sz] !== false && item.stock_qty > 0) || "S";
+currentSize = firstAvailable;
+
+sizesGroup.innerHTML = allSizes.map(sz => {
+const isAvail = (stockMap[sz] !== false) && item.stock_qty > 0;
+const isSelected = sz === currentSize;
+
+return `
+<button
+class="size-btn-pill ${isSelected ? 'selected' : ''} ${!isAvail ? 'out-of-stock-pill' : ''}"
+style="${!isAvail ? 'opacity: 0.45; text-decoration: line-through; background: #FAF7F2; cursor: not-allowed;' : ''}"
+onclick="handleSizeClick('${sz}', ${isAvail})">
+${sz}
+</button>
+`;
+}).join("");
+}
+
+function handleSizeClick(sz, isAvail) {
+if (!isAvail) {
+showToast(`Size ${sz} is currently out of stock. Tap 'Order Now' to request restock via WhatsApp!`);
+return;
+}
+pickPdpSize(sz);
+}
+
+function pickPdpSize(sz) {
+currentSize = sz;
+document.querySelectorAll(".size-btn-pill").forEach(b => {
+if (!b.classList.contains("out-of-stock-pill")) {
+b.classList.toggle("selected", b.textContent.trim() === sz);
+}
+});
+}
+
+function updatePdpActionButtons(item) {
+const isOutOfStock = item.stock_qty <= 0;
+const bagBtns = document.querySelectorAll(".btn-action-bag, .btn-sticky-bag");
+const orderBtns = document.querySelectorAll(".btn-action-order, .btn-sticky-order");
+
+bagBtns.forEach(btn => {
+if (isOutOfStock) {
+btn.style.opacity = "0.5";
+btn.disabled = true;
+btn.textContent = "Sold Out";
+} else {
+btn.style.opacity = "1";
+btn.disabled = false;
+btn.textContent = "🛍️ Add to Bag";
+}
+});
+
+orderBtns.forEach(btn => {
+if (isOutOfStock) {
+btn.textContent = "💬 Request Restock on WhatsApp";
+btn.onclick = () => requestRestockOnWhatsApp(item);
+} else {
+btn.textContent = "⚡ Order Now";
+btn.onclick = () => addCurrentPdp(true);
+}
+});
+}
+
+function requestRestockOnWhatsApp(item) {
+const msg = `Hi ZAYA Team, I would like to request a restock/custom order for:\n*${item.title}*\nCode: ${item.id}\nColor: ${currentColor}\nSize: ${currentSize}\nPlease let me know when it will be available!`;
+const waUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+window.open(waUrl, "_blank");
 }
 
 function togglePdpAccordion(headerElement) {
@@ -417,13 +588,6 @@ currentColor = colorName;
 document.getElementById("pdpSelectedColorName").textContent = colorName;
 document.querySelectorAll(".color-swatch-btn").forEach(b => b.classList.remove("selected"));
 btnElement.classList.add("selected");
-}
-
-function pickPdpSize(sz) {
-currentSize = sz;
-document.querySelectorAll(".size-btn-pill").forEach(b => {
-b.classList.toggle("selected", b.textContent === sz);
-});
 }
 
 function renderReviewsMarquee() {
@@ -546,10 +710,78 @@ if (e.target.id === "legalModal") closeLegalModalDirect();
 }
 
 // -------------------------------------------------------------
-// 9. CART & CHECKOUT
+// 9. D. PINCODE & COD SERVICEABILITY CHECKER
+// -------------------------------------------------------------
+function setupPincodeListener() {
+const pincodeInput = document.getElementById("custPincode");
+if (!pincodeInput) return;
+
+pincodeInput.addEventListener("input", function() {
+const pin = this.value.trim();
+checkPincodeServiceability(pin);
+});
+}
+
+function checkPincodeServiceability(pin) {
+let noticeEl = document.getElementById("pincodeNotice");
+if (!noticeEl) {
+noticeEl = document.createElement("div");
+noticeEl.id = "pincodeNotice";
+noticeEl.style.fontSize = "0.72rem";
+noticeEl.style.fontWeight = "600";
+noticeEl.style.marginTop = "4px";
+const pincodeInput = document.getElementById("custPincode");
+if (pincodeInput && pincodeInput.parentElement) {
+pincodeInput.parentElement.appendChild(noticeEl);
+}
+}
+
+const codCard = document.getElementById("payCardCod");
+
+if (!/^\d{6}$/.test(pin)) {
+noticeEl.style.display = "none";
+if (codCard) {
+codCard.style.opacity = "1";
+codCard.style.pointerEvents = "auto";
+}
+return;
+}
+
+const isCodBlocked = blockedCodPincodes.includes(pin);
+
+if (isCodBlocked) {
+noticeEl.style.display = "block";
+noticeEl.style.color = "#D9534F";
+noticeEl.textContent = `⚠️ Pincode ${pin}: Cash on Delivery unavailable. Please choose UPI / Online Payment.`;
+
+if (codCard) {
+codCard.style.opacity = "0.4";
+codCard.style.pointerEvents = "none";
+}
+if (selectedPayment === "COD") {
+selectPaymentMethod("UPI");
+}
+} else {
+noticeEl.style.display = "block";
+noticeEl.style.color = "#2E7D32";
+noticeEl.textContent = `✓ Pincode ${pin}: Express doorstep delivery available (3–4 business days).`;
+
+if (codCard) {
+codCard.style.opacity = "1";
+codCard.style.pointerEvents = "auto";
+}
+}
+}
+
+// -------------------------------------------------------------
+// 10. CART & CHECKOUT
 // -------------------------------------------------------------
 function addCurrentPdp(isDirectOrder) {
 if (currentProduct) {
+if (currentProduct.stock_qty <= 0) {
+requestRestockOnWhatsApp(currentProduct);
+return;
+}
 addToBag(currentProduct, currentSize, currentColor);
 if (isDirectOrder) {
 toggleBagDrawer(true);
@@ -707,7 +939,7 @@ Color: <strong>${item.color}</strong> | Size: <strong>${item.size}</strong>
 }
 
 // -------------------------------------------------------------
-// 10. WHATSAPP CHECKOUT + ORDER LOGGING TO SUPABASE
+// 11. WHATSAPP CHECKOUT + ORDER LOGGING TO SUPABASE
 // -------------------------------------------------------------
 async function submitOrderToWhatsApp() {
 if (cart.length === 0) {
@@ -735,6 +967,11 @@ return;
 }
 if (!/^\d{10}$/.test(phone)) {
 alert("Please enter a valid 10-digit Phone Number.");
+return;
+}
+
+if (selectedPayment === "COD" && blockedCodPincodes.includes(pincode)) {
+alert(`Cash on Delivery is unavailable for pincode ${pincode}. Please select UPI / Online Payment.`);
 return;
 }
 
