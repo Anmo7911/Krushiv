@@ -1,12 +1,13 @@
 // js/admin.js
+
 let cachedProducts = [];
 
 // 1. AUTHENTICATION & SESSION MANAGEMENT
 async function checkAuthSession() {
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session && session.user) {
-      showDashboard(session.user);
+    const { data } = await supabaseClient.auth.getSession();
+    if (data && data.session && data.session.user) {
+      showDashboard(data.session.user);
     } else {
       showLogin();
     }
@@ -17,30 +18,45 @@ async function checkAuthSession() {
 }
 
 function showLogin() {
-  document.getElementById("loginCard").style.display = "block";
-  document.getElementById("dashboardArea").style.display = "none";
+  const loginCard = document.getElementById("loginCard");
+  const dashboardArea = document.getElementById("dashboardArea");
+  if (loginCard) loginCard.style.display = "block";
+  if (dashboardArea) dashboardArea.style.display = "none";
 }
 
 function showDashboard(user) {
-  document.getElementById("loginCard").style.display = "none";
-  document.getElementById("dashboardArea").style.display = "block";
-  document.getElementById("userDisplay").textContent = "Logged in as: " + user.email;
+  const loginCard = document.getElementById("loginCard");
+  const dashboardArea = document.getElementById("dashboardArea");
+  const userDisplay = document.getElementById("userDisplay");
+  if (loginCard) loginCard.style.display = "none";
+  if (dashboardArea) dashboardArea.style.display = "block";
+  if (userDisplay && user) {
+    userDisplay.textContent = "Logged in as: " + user.email;
+  }
   loadInventory();
   resetForm();
 }
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
+  const emailInput = document.getElementById("loginEmail");
+  const passwordInput = document.getElementById("loginPassword");
   const errorElem = document.getElementById("loginError");
-  errorElem.textContent = "Signing in...";
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+  const email = emailInput ? emailInput.value.trim() : "";
+  const password = passwordInput ? passwordInput.value : "";
+
+  if (errorElem) errorElem.textContent = "Signing in...";
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
   if (error) {
-    errorElem.textContent = error.message;
+    if (errorElem) errorElem.textContent = error.message;
   } else if (data && data.user) {
-    errorElem.textContent = "";
+    if (errorElem) errorElem.textContent = "";
     showDashboard(data.user);
   }
 }
@@ -53,20 +69,24 @@ async function handleLogout() {
 // 2. SLUG & TOKEN GENERATORS
 function autoPopulateSlug(title) {
   const slugInput = document.getElementById("prodSlug");
-  if (!document.getElementById("editingId").value) {
+  const editingId = document.getElementById("editingId");
+  if (slugInput && editingId && !editingId.value) {
     slugInput.value = generateSlug(title);
   }
 }
 
 function regenerateToken() {
-  document.getElementById("prodToken").value = generateToken("tok");
+  const prodToken = document.getElementById("prodToken");
+  if (prodToken) {
+    prodToken.value = generateToken("tok");
+  }
 }
 
-// 3. DYNAMIC COLOR SWATCHES
+// 3. COLOR SWATCHES
 function addColorRow(name, hex) {
-  name = name || "";
-  hex = hex || "#8A9A86";
   const container = document.getElementById("colorsContainer");
+  if (!container) return;
+
   const div = document.createElement("div");
   div.className = "dynamic-row";
 
@@ -74,14 +94,14 @@ function addColorRow(name, hex) {
   nameInput.type = "text";
   nameInput.className = "input color-name";
   nameInput.placeholder = "Color Name";
-  nameInput.value = name;
+  nameInput.value = name || "";
   nameInput.style.flex = "2";
   nameInput.required = true;
 
   const colorInput = document.createElement("input");
   colorInput.type = "color";
   colorInput.className = "color-picker";
-  colorInput.value = hex;
+  colorInput.value = hex || "#8A9A86";
   colorInput.style.width = "44px";
   colorInput.style.height = "38px";
   colorInput.style.border = "1px solid var(--border)";
@@ -92,7 +112,9 @@ function addColorRow(name, hex) {
   delBtn.type = "button";
   delBtn.className = "btn btn-danger btn-sm";
   delBtn.textContent = "✕";
-  delBtn.onclick = function() { div.remove(); };
+  delBtn.onclick = function() {
+    div.remove();
+  };
 
   div.appendChild(nameInput);
   div.appendChild(colorInput);
@@ -104,14 +126,20 @@ function getColorsData() {
   const rows = document.querySelectorAll("#colorsContainer .dynamic-row");
   const colors = [];
   rows.forEach(function(row) {
-    const name = row.querySelector(".color-name").value.trim();
-    const hex = row.querySelector(".color-picker").value;
-    if (name) colors.push({ name: name, hex: hex });
+    const nameEl = row.querySelector(".color-name");
+    const colorEl = row.querySelector(".color-picker");
+    const name = nameEl ? nameEl.value.trim() : "";
+    const hex = colorEl ? colorEl.value : "";
+    if (name) {
+      colors.push({ name: name, hex: hex });
+    }
   });
   return colors;
 }
 
-// 4. LOAD INVENTORY (SAFE DOM NODES)
+// 4. LOAD INVENTORY
 async function loadInventory() {
   const tbody = document.getElementById("inventoryTableBody");
+  if (!tbody) return;
+
   tbody.innerHTML = '
