@@ -13,9 +13,9 @@
  * environment variables into browser JavaScript at runtime. The publishable
  * key is intentionally safe for browser use when RLS is correctly configured.
  */
-const SUPABASE_URL = window.ZAYA_SUPABASE_URL || "";
+const SUPABASE_URL = "https://tjrvvqefycjrgdbtecqn.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY =
-  window.ZAYA_SUPABASE_PUBLISHABLE_KEY || "";
+ "sb_publishable_v_j1wZtERXZcBNMWX80LmQ_q3gODXKq";
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   console.warn(
