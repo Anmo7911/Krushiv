@@ -1,220 +1,330 @@
-let currentAdminUser = null;
+let cachedProducts = [];
 
-document.addEventListener("DOMContentLoaded", initAdmin);
-
-async function initAdmin() {
-  if (!window.ZayaSupabase?.isConfigured) {
-    location.replace("/auth.html");
-    return;
-  }
-
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error || !data?.session) {
-    location.replace("/auth.html");
-    return;
-  }
-
-  currentAdminUser = data.session.user;
-
-  // Defense-in-depth: verify the signed-in user exists in admin_users.
-  // If you intentionally want every authenticated user to manage products,
-  // remove this block and use the simpler authenticated-only RLS policy.
-  const { data: adminRow, error: adminError } = await supabaseClient
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", currentAdminUser.id)
-    .maybeSingle();
-
-  if (adminError || !adminRow) {
-    await supabaseClient.auth.signOut();
-    showAdminGate("This account is authenticated but is not authorized for the admin portal.");
-    return;
-  }
-
-  document.getElementById("adminEmail").textContent =
-    currentAdminUser.email || "Authenticated admin";
-
-  document.getElementById("productForm")?.addEventListener("submit", handleProductSubmit);
-  document.getElementById("signOutButton")?.addEventListener("click", signOutAdmin);
-  document.getElementById("fileInput")?.addEventListener("change", previewImage);
-
-  await loadAdminProducts();
+// -------------------------------------------------------------
+// 1. AUTHENTICATION & SESSION MANAGEMENT
+// -------------------------------------------------------------
+async function checkAuthSession() {
+const { data: { session } } = await supabase.auth.getSession();
+if (session) {
+showDashboard(session.user);
+} else {
+showLogin();
+}
 }
 
-async function handleProductSubmit(event) {
-  event.preventDefault();
-
-  const form = event.currentTarget;
-  const submit = document.getElementById("saveProductButton");
-  const file = document.getElementById("fileInput").files[0];
-
-  if (!file) {
-    setAdminMessage("Select a product image.", "error");
-    return;
-  }
-
-  const title = form.title.value.trim();
-  const token = slugify(form.token.value);
-  const category = form.category.value.trim();
-  const price = Number(form.price.value);
-  const mrp = Number(form.mrp.value);
-  const colorName = form.colorName.value.trim();
-  const colorHex = form.colorHex.value.trim();
-
-  if (!title || !token || !category || !colorName || !colorHex) {
-    setAdminMessage("Complete every product field.", "error");
-    return;
-  }
-
-  if (!Number.isFinite(price) || price < 0 || !Number.isFinite(mrp) || mrp < 0) {
-    setAdminMessage("Price and MRP must be valid non-negative numbers.", "error");
-    return;
-  }
-
-  if (!/^#[0-9A-Fa-f]{6}$/.test(colorHex)) {
-    setAdminMessage("Color Hex Code must look like #A86B58.", "error");
-    return;
-  }
-
-  submit.disabled = true;
-  submit.textContent = "Uploading…";
-
-  const safeName = file.name
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/-+/g, "-");
-
-  const extension = safeName.includes(".")
-    ? safeName.slice(safeName.lastIndexOf("."))
-    : ".jpg";
-
-  const path = `${token}/${crypto.randomUUID()}${extension}`;
-
-  try {
-    const { error: uploadError } = await supabaseClient.storage
-      .from("product-images")
-      .upload(path, file, {
-        cacheControl: "31536000",
-        contentType: file.type || "image/jpeg",
-        upsert: false
-      });
-
-    if (uploadError) throw uploadError;
-
-    const { data: publicData } = supabaseClient.storage
-      .from("product-images")
-      .getPublicUrl(path);
-
-    const imageUrl = publicData?.publicUrl;
-    if (!imageUrl) throw new Error("Unable to create the public image URL.");
-
-    const colors = [
-      {
-        name: colorName,
-        hex: colorHex.toUpperCase(),
-        image: imageUrl
-      }
-    ];
-
-    const { error: insertError } = await supabaseClient
-      .from("products")
-      .insert({
-        title,
-        token,
-        category,
-        price,
-        mrp,
-        colors
-      });
-
-    if (insertError) {
-      // The uploaded object can be cleaned up if the database insert fails.
-      await supabaseClient.storage.from("product-images").remove([path]);
-      throw insertError;
-    }
-
-    form.reset();
-    document.getElementById("imagePreview").hidden = true;
-    setAdminMessage("Product published successfully.", "success");
-    await loadAdminProducts();
-  } catch (error) {
-    console.error(error);
-    setAdminMessage(error.message || "Could not publish product.", "error");
-  } finally {
-    submit.disabled = false;
-    submit.textContent = "Publish product";
-  }
+function showLogin() {
+document.getElementById("loginCard").style.display = "block";
+document.getElementById("dashboardArea").style.display = "none";
 }
 
-async function loadAdminProducts() {
-  const list = document.getElementById("adminProductList");
-  if (!list) return;
-
-  const { data, error } = await supabaseClient
-    .from("products")
-    .select("id, title, token, category, price, mrp, colors, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    list.innerHTML = `<div class="state-card"><strong>${escapeHtml(error.message)}</strong></div>`;
-    return;
-  }
-
-  list.innerHTML = (data || [])
-    .map((product) => {
-      const first = getFirstVariant(product);
-      return `
-        <article class="admin-product-row">
-          <img src="${escapeHtml(first?.image || "")}" alt="" loading="lazy">
-          <div>
-            <strong>${escapeHtml(product.title)}</strong>
-            <span>${escapeHtml(product.category)} · ${formatINR(product.price)}</span>
-            <small>${escapeHtml(product.token)}</small>
-          </div>
-          <a href="${escapeHtml(getProductUrl(product, first?.name))}" target="_blank" rel="noopener">View</a>
-        </article>`;
-    })
-    .join("") || `<div class="empty-state">No products yet.</div>`;
+function showDashboard(user) {
+document.getElementById("loginCard").style.display = "none";
+document.getElementById("dashboardArea").style.display = "block";
+document.getElementById("userDisplay").textContent = `Logged in as: ${user.email}`;
+loadInventory();
+resetForm();
 }
 
-async function signOutAdmin() {
-  const { error } = await supabaseClient.auth.signOut();
-  if (error) {
-    setAdminMessage(error.message, "error");
-    return;
-  }
-  location.replace("/auth.html");
+async function handleLogin(e) {
+e.preventDefault();
+const email = document.getElementById("loginEmail").value.trim();
+const password = document.getElementById("loginPassword").value;
+const errorElem = document.getElementById("loginError");
+errorElem.textContent = "Signing in...";
+
+const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+if (error) {
+errorElem.textContent = error.message;
+} else {
+errorElem.textContent = "";
+showDashboard(data.user);
+}
 }
 
-function previewImage(event) {
-  const file = event.target.files[0];
-  const preview = document.getElementById("imagePreview");
-  if (!file) {
-    preview.hidden = true;
-    return;
-  }
-
-  const url = URL.createObjectURL(file);
-  preview.src = url;
-  preview.hidden = false;
-  preview.onload = () => URL.revokeObjectURL(url);
+async function handleLogout() {
+await supabase.auth.signOut();
+showLogin();
 }
 
-function setAdminMessage(message, type = "") {
-  const element = document.getElementById("adminMessage");
-  if (!element) return;
-  element.textContent = message;
-  element.className = `form-message ${type}`.trim();
+// -------------------------------------------------------------
+// 2. SLUG & TOKEN GENERATORS
+// -------------------------------------------------------------
+function autoPopulateSlug(title) {
+const slugInput = document.getElementById("prodSlug");
+if (!document.getElementById("editingId").value) {
+slugInput.value = generateSlug(title);
+}
 }
 
-function showAdminGate(message) {
-  document.body.innerHTML = `
-    <main class="auth-shell">
-      <section class="auth-card">
-        <div class="eyebrow">ZAYA ADMIN</div>
-        <h1>Access denied</h1>
-        <p>${escapeHtml(message)}</p>
-        <a class="primary-button" href="/auth.html">Return to sign in</a>
-      </section>
-    </main>`;
+function regenerateToken() {
+document.getElementById("prodToken").value = generateToken("tok");
 }
+
+// -------------------------------------------------------------
+// 3. DYNAMIC COLOR SWATCH INPUTS
+// -------------------------------------------------------------
+function addColorRow(name = "", hex = "#8A9A86") {
+const container = document.getElementById("colorsContainer");
+const div = document.createElement("div");
+div.className = "dynamic-row";
+div.innerHTML = `
+<input type="text" class="input color-name" placeholder="Color Name (e.g. Sage Green)" value="${name}" style="flex: 2;" required />
+<input type="color" class="color-picker" value="${hex}" style="width: 44px; height: 38px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;" />
+<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+`;
+container.appendChild(div);
+}
+
+function getColorsData() {
+const rows = document.querySelectorAll("#colorsContainer .dynamic-row");
+const colors = [];
+rows.forEach(row => {
+const name = row.querySelector(".color-name").value.trim();
+const hex = row.querySelector(".color-picker").value;
+if (name) colors.push({ name, hex });
+});
+return colors;
+}
+
+// -------------------------------------------------------------
+// 4. LOAD INVENTORY
+// -------------------------------------------------------------
+async function loadInventory() {
+const tbody = document.getElementById("inventoryTableBody");
+tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Loading inventory...</td></tr>`;
+
+const { data, error } = await supabase
+.from('products')
+.select('*')
+.order('created_at', { ascending: false });
+
+if (error) {
+console.error("Error loading products:", error);
+tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: red;">Failed to load products.</td></tr>`;
+return;
+}
+
+cachedProducts = data || [];
+document.getElementById("totalItemsCount").textContent = cachedProducts.length;
+
+if (cachedProducts.length === 0) {
+tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: var(--muted);">No products created yet. Use the form above to add your first piece!</td></tr>`;
+return;
+}
+
+const siteOrigin = window.location.origin;
+
+tbody.innerHTML = cachedProducts.map(p => {
+const images = Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]');
+const firstImg = images[0] || '';
+const slugUrl = `${siteOrigin}/?p=${p.slug}`;
+const tokenUrl = `${siteOrigin}/?token=${p.token}`;
+
+return `
+<tr>
+<td>
+${firstImg ? `<img src="${firstImg}" class="thumb" alt="${p.title}" />` : '<div class="thumb" style="background:#EAE6DF;"></div>'}
+</td>
+<td><strong>${p.id}</strong></td>
+<td>
+<div style="font-weight: 600;">${p.title}</div>
+<div style="font-size: 0.72rem; color: var(--muted);">${p.tag || 'No Tag'}</div>
+</td>
+<td>${p.category}</td>
+<td>
+<div>₹${Number(p.price).toLocaleString('en-IN')}</div>
+<div style="font-size: 0.72rem; color: var(--muted); text-decoration: line-through;">₹${Number(p.mrp).toLocaleString('en-IN')}</div>
+</td>
+<td>
+<div style="display: flex; gap: 4px; flex-direction: column;">
+<button class="btn btn-copy btn-sm" onclick="copyToClipboard('${slugUrl}', 'Slug Link copied!')">📋 Slug Link</button>
+<button class="btn btn-copy btn-sm" onclick="copyToClipboard('${tokenUrl}', 'Token Link copied!')">🔑 Token Link</button>
+</div>
+</td>
+<td>
+<div style="display: flex; gap: 6px;">
+<button class="btn btn-copy btn-sm" onclick="editProduct('${p.id}')">Edit</button>
+<button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+</div>
+</td>
+</tr>
+`;
+}).join("");
+}
+
+// -------------------------------------------------------------
+// 5. SAVE PRODUCT (CREATE / UPDATE)
+// -------------------------------------------------------------
+async function handleSaveProduct(e) {
+e.preventDefault();
+
+const id = document.getElementById("prodId").value.trim();
+const title = document.getElementById("prodTitle").value.trim();
+const category = document.getElementById("prodCategory").value;
+const slug = document.getElementById("prodSlug").value.trim();
+const token = document.getElementById("prodToken").value.trim();
+const price = parseFloat(document.getElementById("prodPrice").value);
+const mrp = parseFloat(document.getElementById("prodMrp").value);
+const tag = document.getElementById("prodTag").value.trim();
+const bought_this_month = document.getElementById("prodBought").value.trim();
+
+// Parse images (comma-separated or line-breaks)
+const rawImages = document.getElementById("prodImages").value;
+const images = rawImages
+.split(/[\n,]/)
+.map(url => url.trim())
+.filter(url => url.length > 0);
+
+// Parse specs
+const rawSpecs = document.getElementById("prodSpecs").value;
+const specs = rawSpecs
+.split('\n')
+.map(s => s.trim())
+.filter(s => s.length > 0);
+
+const colors = getColorsData();
+
+const payload = {
+id,
+title,
+category,
+slug,
+token,
+price,
+mrp,
+tag,
+bought_this_month,
+images,
+colors,
+specs,
+is_active: true
+};
+
+const editingId = document.getElementById("editingId").value;
+const saveBtn = document.getElementById("saveBtn");
+saveBtn.disabled = true;
+saveBtn.textContent = "Saving...";
+
+let response;
+if (editingId) {
+// Update existing
+response = await supabase
+.from('products')
+.update(payload)
+.eq('id', editingId);
+} else {
+// Insert new
+response = await supabase
+.from('products')
+.insert([payload]);
+}
+
+saveBtn.disabled = false;
+saveBtn.textContent = "Save Product";
+
+if (response.error) {
+alert("Error saving product: " + response.error.message);
+} else {
+showToast(editingId ? "Product updated successfully!" : "Product added successfully!");
+resetForm();
+loadInventory();
+}
+}
+
+// -------------------------------------------------------------
+// 6. EDIT & DELETE ACTIONS
+// -------------------------------------------------------------
+function editProduct(id) {
+const item = cachedProducts.find(p => p.id === id);
+if (!item) return;
+
+document.getElementById("editingId").value = item.id;
+document.getElementById("formHeader").textContent = `Edit Product (${item.id})`;
+document.getElementById("saveBtn").textContent = "Update Product";
+
+document.getElementById("prodId").value = item.id;
+document.getElementById("prodId").disabled = true; // Don't change PK
+document.getElementById("prodTitle").value = item.title;
+document.getElementById("prodCategory").value = item.category;
+document.getElementById("prodSlug").value = item.slug;
+document.getElementById("prodToken").value = item.token;
+document.getElementById("prodPrice").value = item.price;
+document.getElementById("prodMrp").value = item.mrp;
+document.getElementById("prodTag").value = item.tag || "";
+document.getElementById("prodBought").value = item.bought_this_month || "";
+
+const images = Array.isArray(item.images) ? item.images : JSON.parse(item.images || '[]');
+document.getElementById("prodImages").value = images.join("\n");
+
+const specs = Array.isArray(item.specs) ? item.specs : JSON.parse(item.specs || '[]');
+document.getElementById("prodSpecs").value = specs.join("\n");
+
+// Populate colors
+const container = document.getElementById("colorsContainer");
+container.innerHTML = "";
+const colors = Array.isArray(item.colors) ? item.colors : JSON.parse(item.colors || '[]');
+if (colors.length > 0) {
+colors.forEach(c => addColorRow(c.name, c.hex));
+} else {
+addColorRow();
+}
+
+window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function deleteProduct(id) {
+if (!confirm(`Are you sure you want to delete product ${id}?`)) return;
+
+const { error } = await supabase
+.from('products')
+.delete()
+.eq('id', id);
+
+if (error) {
+alert("Error deleting product: " + error.message);
+} else {
+showToast("Product deleted!");
+loadInventory();
+}
+}
+
+function resetForm() {
+document.getElementById("editingId").value = "";
+document.getElementById("formHeader").textContent = "Add New Product";
+document.getElementById("saveBtn").textContent = "Save Product";
+document.getElementById("prodId").disabled = false;
+document.getElementById("productForm").reset();
+
+// Reset colors container with 1 default row
+const container = document.getElementById("colorsContainer");
+container.innerHTML = "";
+addColorRow("Default", "#8A9A86");
+
+// Generate a fresh token
+regenerateToken();
+}
+
+// -------------------------------------------------------------
+// 7. UTILITIES
+// -------------------------------------------------------------
+function copyToClipboard(text, msg) {
+navigator.clipboard.writeText(text).then(() => {
+showToast(msg);
+}).catch(() => {
+prompt("Copy link:", text);
+});
+}
+
+function showToast(msg) {
+const toast = document.getElementById("adminToast");
+toast.textContent = msg;
+toast.style.display = "block";
+setTimeout(() => {
+toast.style.display = "none";
+}, 2200);
+}
+
+// Check session on load
+document.addEventListener("DOMContentLoaded", () => {
+checkAuthSession();
+});
