@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZAYA Atelier | Coupons & Offers Manager</title>
+
+<!-- Supabase JS Client via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+--bg: #FBF9F6;
+--surface: #FFFFFF;
+--noir: #181615;
+--accent: #A86B58;
+--border: #E8E2D9;
+--muted: #78726D;
+--danger: #D9534F;
+--success: #2E7D32;
+--radius-sm: 6px;
+--radius-md: 10px;
+--font-serif: Georgia, serif;
+--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--noir); font-family: var(--font-sans); line-height: 1.5; padding: 20px; }
+
+.admin-container { max-width: 980px; margin: 0 auto; }
+.top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+.admin-title { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; }
+
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease; }
+.btn-dark { background: var(--noir); color: #fff; }
+.btn-dark:hover { background: #333; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+.btn-copy { background: #EFEBE9; color: var(--noir); border: 1px solid var(--border); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.03); }
+.card-title { font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 14px; }
+
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1 / -1; }
+.label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+.input, select, textarea {
+padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; outline: none; background: #FAFAFA;
+}
+.input:focus, select:focus, textarea:focus { border-color: var(--noir); background: #FFF; }
+.hint { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left; }
+th { background: #FAF7F2; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
+td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover { background: #FCFAF7; }
+
+.badge-status { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-block; cursor: pointer; }
+.badge-active { background: #E8F5E9; color: var(--success); }
+.badge-inactive { background: #FFEBEE; color: var(--danger); }
+
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--noir); color: #fff; padding: 10px 18px; border-radius: 30px; font-size: 0.82rem; display: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<div class="admin-container">
+<div class="top-header">
+<div>
+<h1 class="admin-title">Coupons & Offer Banner Manager</h1>
+<div style="font-size: 0.8rem; color: var(--muted);" id="userDisplay">Protected Dashboard</div>
+</div>
+<div style="display: flex; gap: 8px;">
+<a href="/admin" class="btn btn-copy">← Products Catalog</a>
+<a href="/" target="_blank" class="btn btn-copy">Live Store ↗</a>
+</div>
+</div>
+
+<!-- 1. TOP ANNOUNCEMENT BANNER -->
+<div class="card">
+<h2 class="card-title">1. Live Storefront Top Announcement Bar</h2>
+<p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
+Change the top announcement banner that runs across the very top of your store live without re-deploying code.
+</p>
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+<input type="text" id="topBarInput" class="input" style="flex: 1; min-width: 280px;" placeholder="Festive Pret Collection • Easy Doorstep Exchange • Use Code FESTIVE20 for 20% Off" />
+<button class="btn btn-dark" onclick="saveTopBarText()">Save Banner</button>
+</div>
+</div>
+
+<!-- 2. COUPON FORM -->
+<div class="card">
+<h2 class="card-title">2. Add or Edit Coupon Code</h2>
+<form id="couponForm" onsubmit="handleSaveCoupon(event)">
+<div class="form-grid">
+<div class="form-group">
+<label class="label">Coupon Code (All Caps)</label>
+<input type="text" id="couponCode" class="input" placeholder="e.g. DIWALI30" required oninput="this.value = this.value.toUpperCase().replace(/\s+/g, '')" />
+</div>
+
+<div class="form-group">
+<label class="label">Discount Type</label>
+<select id="couponType" required onchange="toggleTypePlaceholder()">
+<option value="percent">Percentage Off (%)</option>
+<option value="flat">Flat Amount Off (₹)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label class="label" id="valLabel">Discount Percentage (%)</label>
+<input type="number" id="couponVal" class="input" placeholder="20" required min="1" max="100" />
+</div>
+
+<div class="form-group">
+<label class="label">Minimum Order Value (₹)</label>
+<input type="number" id="couponMinOrder" class="input" placeholder="0" min="0" value="0" />
+<span class="hint">0 means no minimum required</span>
+</div>
+
+<div class="form-group full">
+<label class="label">Coupon Description</label>
+<input type="text" id="couponDesc" class="input" placeholder="e.g. 20% Discount for Festive Season" required />
+</div>
+</div>
+
+<div style="margin-top: 16px; display: flex; gap: 8px;">
+<button type="submit" class="btn btn-dark" id="saveCouponBtn">Save Coupon</button>
+<button type="button" class="btn btn-copy" onclick="resetCouponForm()">Clear</button>
+</div>
+</form>
+</div>
+
+<!-- 3. TABLE -->
+<div class="card">
+<h2 class="card-title">Coupons in Database (<span id="couponCount">0</span>)</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Discount</th>
+<th>Min. Order</th>
+<th>Description</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="couponsTableBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="adminToast" class="toast">Action completed!</div>
+
+<script src="/js/supabase.js"></script>
+
+<script>
+let cachedCoupons = [];
+
+async function initPage() {
+const { data: { session } } = await supabaseClient.auth.getSession();
+if (!session) {
+window.location.href = "/admin";
+return;
+}
+document.getElementById("userDisplay").textContent = "Logged in: " + session.user.email;
+loadTopBarSetting();
+loadCoupons();
+}
+
+function toggleTypePlaceholder() {
+const type = document.getElementById("couponType").value;
+const label = document.getElementById("valLabel");
+const input = document.getElementById("couponVal");
+if (type === "percent") {
+label.textContent = "Discount Percentage (%)";
+input.placeholder = "20";
+input.max = "100";
+} else {
+label.textContent = "Flat Discount Amount (₹)";
+input.placeholder = "500";
+input.removeAttribute("max");
+}
+}
+
+async function loadTopBarSetting() {
+const { data } = await supabaseClient
+.from("store_settings")
+.select("value")
+.eq("key", "top_bar_text")
+.maybeSingle();
+
+if (data && data.value) {
+document.getElementById("topBarInput").value = data.value;
+}
+}
+
+async function saveTopBarText() {
+const text = document.getElementById("topBarInput").value.trim();
+if (!text) {
+alert("Please enter banner text.");
+return;
+}
+
+const { error } = await supabaseClient
+.from("store_settings")
+.upsert({ key: "top_bar_text", value: text });
+
+if (error) {
+alert("Error saving banner: " + error.message);
+} else {
+showToast("Top offer banner updated live!");
+}
+}
+
+async function loadCoupons() {
+const tbody = document.getElementById("couponsTableBody");
+tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px;">Loading coupons...</td></tr>';
+
+const { data, error } = await supabaseClient
+.from("coupons")
+.select("*")
+.order("created_at", { ascending: false });
+
+if (error) {
+tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Failed to load coupons.</td></tr>';
+return;
+}
+
+cachedCoupons = data || [];
+document.getElementById("couponCount").textContent = String(cachedCoupons.length);
+
+if (cachedCoupons.length === 0) {
+tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No coupons created yet.</td></tr>';
+return;
+}
+
+tbody.innerHTML = cachedCoupons.map(c => {
+const discountStr = c.type === 'percent' ? (c.val + '% OFF') : ('₹' + Number(c.val).toLocaleString('en-IN') + ' OFF');
+const minStr = c.min_order > 0 ? ('₹' + Number(c.min_order).toLocaleString('en-IN')) : 'None';
+const isActive = c.is_active !== false;
+
+return '<tr>' +
+'<td><strong>' + c.code + '</strong></td>' +
+'<td>' + discountStr + '</td>' +
+'<td>' + minStr + '</td>' +
+'<td>' + (c.description || '-') + '</td>' +
+'<td><span class="badge-status ' + (isActive ? 'badge-active' : 'badge-inactive') + '" onclick="toggleCouponStatus(\'' + c.code + '\', ' + !isActive + ')">' + (isActive ? 'Active' : 'Disabled') + '</span></td>' +
+'<td><button class="btn btn-danger btn-sm" onclick="deleteCoupon(\'' + c.code + '\')">Delete</button></td>' +
+'</tr>';
+}).join('');
+}
+
+async function handleSaveCoupon(e) {
+e.preventDefault();
+const code = document.getElementById("couponCode").value.trim().toUpperCase();
+const type = document.getElementById("couponType").value;
+const val = parseFloat(document.getElementById("couponVal").value);
+const min_order = parseFloat(document.getElementById("couponMinOrder").value) || 0;
+const description = document.getElementById("couponDesc").value.trim();
+
+const { error } = await supabaseClient
+.from("coupons")
+.upsert({
+code: code,
+type: type,
+val: val,
+min_order: min_order,
+description: description,
+is_active: true
+});
+
+if (error) {
+alert("Failed to save coupon: " + error.message);
+} else {
+showToast("Coupon " + code + " saved!");
+resetCouponForm();
+loadCoupons();
+}
+}
+
+async function toggleCouponStatus(code, newStatus) {
+const { error } = await supabaseClient
+.from("coupons")
+.update({ is_active: newStatus })
+.eq("code", code);
+
+if (error) {
+alert("Status update failed: " + error.message);
+} else {
+showToast("Coupon updated!");
+loadCoupons();
+}
+}
+
+async function deleteCoupon(code) {
+if (!confirm("Are you sure you want to delete coupon " + code + "?")) return;
+const { error } = await supabaseClient
+.from("coupons")
+.delete()
+.eq("code", code);
+
+if (error) {
+alert("Error deleting coupon: " + error.message);
+} else {
+showToast("Coupon deleted!");
+loadCoupons();
+}
+}
+
+function resetCouponForm() {
+document.getElementById("couponForm").reset();
+toggleTypePlaceholder();
+}
+
+function showToast(msg) {
+const toast = document.getElementById("adminToast");
+toast.textContent = msg;
+toast.style.display = "block";
+setTimeout(function() { toast.style.display = "none"; }, 2200);
+}
+
+document.addEventListener("DOMContentLoaded", initPage);
+</script>
+</body>
+</html>
