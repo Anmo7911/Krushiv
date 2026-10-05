@@ -1,25 +1,28 @@
 // js/supabase.js
-// Replace these with your actual Supabase credentials from Settings -> API
 const SUPABASE_URL = "https://tjrvvqefycjrgdbtecqn.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_v_j1wZtERXZcBNMWX80LmQ_q3gODXKq";
 
-// Initialize Supabase Client (loaded via CDN in HTML)
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Use window.supabaseClient to avoid variable collision with the CDN's window.supabase
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Helper function: Generate URL-safe slug from title
+// Assign to window.supabaseClient and fallback alias window.db
+window.supabaseClient = supabaseClient;
+window.db = supabaseClient;
+
+// Helper: Slug generator
 function generateSlug(text) {
   return text
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')        // Replace spaces with -
-    .replace(/[^\w\-]+/g, '')    // Remove non-word chars
-    .replace(/\-\-+/g, '-')      // Replace multiple - with single -
-    .replace(/^-+/, '')          // Trim - from start
-    .replace(/-+$/, '');         // Trim - from end
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
-// Helper function: Generate unique random token (for private/shareable links)
+// Helper: Token generator
 function generateToken(prefix = "tok") {
   const rand = Math.random().toString(36).substring(2, 10);
   const timestamp = Date.now().toString(36).slice(-4);
