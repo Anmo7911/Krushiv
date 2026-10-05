@@ -1,91 +1,238 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#FBF9F6">
-  <title>Admin | ZAYA</title>
-  <link rel="stylesheet" href="/css/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZAYA Atelier | Admin Portal</title>
+
+<!-- Supabase JS Client via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+--bg: #FBF9F6;
+--surface: #FFFFFF;
+--noir: #181615;
+--accent: #A86B58;
+--border: #E8E2D9;
+--muted: #78726D;
+--wa-green: #25D366;
+--danger: #D9534F;
+--radius-sm: 6px;
+--radius-md: 10px;
+--font-serif: Georgia, serif;
+--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--noir); font-family: var(--font-sans); line-height: 1.5; padding: 20px; }
+
+.admin-container { max-width: 1080px; margin: 0 auto; }
+.top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.admin-title { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; }
+
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease; }
+.btn-dark { background: var(--noir); color: #fff; }
+.btn-dark:hover { background: #333; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+.btn-copy { background: #EFEBE9; color: var(--noir); border: 1px solid var(--border); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.03); }
+.card-title { font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 14px; }
+
+/* Form Styles */
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1 / -1; }
+.label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+.input, select, textarea {
+padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88rem; outline: none; background: #FAFAFA;
+}
+.input:focus, select:focus, textarea:focus { border-color: var(--noir); background: #FFF; }
+.hint { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+/* Dynamic inputs (Colors/Specs) */
+.dynamic-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.dynamic-row { display: flex; gap: 8px; align-items: center; }
+
+/* Table Styles */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left; }
+th { background: #FAF7F2; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
+td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover { background: #FCFAF7; }
+.thumb { width: 44px; height: 55px; border-radius: 4px; object-fit: cover; }
+
+/* Toast Notice */
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--noir); color: #fff; padding: 10px 18px; border-radius: 30px; font-size: 0.82rem; display: none; z-index: 100; }
+</style>
 </head>
-<body class="admin-shell">
-  <header class="site-header">
-    <a class="logo" href="/">ZAYA</a>
-    <button class="header-action" id="signOutButton" type="button">Sign Out</button>
-  </header>
+<body>
 
-  <main class="admin-main">
-    <div class="admin-top">
-      <div>
-        <div class="eyebrow">ADMIN PORTAL</div>
-        <h1>Collection manager</h1>
-      </div>
-      <small id="adminEmail"></small>
-    </div>
+<div class="admin-container">
 
-    <div class="admin-grid">
-      <section class="admin-card">
-        <h2>Publish a product</h2>
+<!-- LOGIN PANEL (Visible when logged out) -->
+<div id="loginCard" class="card" style="max-width: 420px; margin: 80px auto;">
+<h2 class="card-title" style="text-align: center;">ZAYA Admin Login</h2>
+<p style="font-size: 0.82rem; color: var(--muted); text-align: center; margin-bottom: 16px;">
+Sign in with your Supabase Admin credentials.
+</p>
+<form id="loginForm" onsubmit="handleLogin(event)">
+<div class="form-group" style="margin-bottom: 12px;">
+<label class="label">Admin Email</label>
+<input type="email" id="loginEmail" class="input" required placeholder="admin@zaya.com" />
+</div>
+<div class="form-group" style="margin-bottom: 16px;">
+<label class="label">Password</label>
+<input type="password" id="loginPassword" class="input" required placeholder="••••••••" />
+</div>
+<button type="submit" class="btn btn-dark" style="width: 100%;">Sign In</button>
+<div id="loginError" style="color: var(--danger); font-size: 0.78rem; margin-top: 8px; text-align: center;"></div>
+</form>
+</div>
 
-        <form class="form-stack" id="productForm">
-          <label class="form-label">
-            Title
-            <input class="form-control" name="title" type="text" maxlength="160" required>
-          </label>
+<!-- MAIN ADMIN DASHBOARD (Visible when logged in) -->
+<div id="dashboardArea" style="display: none;">
 
-          <label class="form-label">
-            Token / Slug
-            <input class="form-control" name="token" type="text" maxlength="120" placeholder="mulmul-anarkali-set" required>
-          </label>
+<div class="top-header">
+<div>
+<h1 class="admin-title">ZAYA Atelier Management</h1>
+<div style="font-size: 0.8rem; color: var(--muted);" id="userDisplay">Logged in</div>
+</div>
+<div style="display: flex; gap: 8px;">
+<a href="index.html" target="_blank" class="btn btn-copy">View Live Store ↗</a>
+<button class="btn btn-dark" onclick="handleLogout()">Sign Out</button>
+</div>
+</div>
 
-          <label class="form-label">
-            Category
-            <input class="form-control" name="category" type="text" maxlength="80" placeholder="Kurtas & Sets" required>
-          </label>
+<!-- PRODUCT CREATION / EDITING FORM -->
+<div class="card">
+<h2 class="card-title" id="formHeader">Add New Product</h2>
+<form id="productForm" onsubmit="handleSaveProduct(event)">
+<input type="hidden" id="editingId" value="" />
 
-          <div class="button-row">
-            <label class="form-label">
-              Price
-              <input class="form-control" name="price" type="number" min="0" step="1" required>
-            </label>
-            <label class="form-label">
-              MRP
-              <input class="form-control" name="mrp" type="number" min="0" step="1" required>
-            </label>
-          </div>
+<div class="form-grid">
 
-          <label class="form-label">
-            Color Variant Name
-            <input class="form-control" name="colorName" type="text" maxlength="60" placeholder="Sage Green" required>
-          </label>
+<div class="form-group">
+<label class="label">Product ID (Unique Code)</label>
+<input type="text" id="prodId" class="input" placeholder="e.g. ZY-101" required />
+</div>
 
-          <label class="form-label">
-            Color Hex Code
-            <input class="form-control" name="colorHex" type="text" maxlength="7" placeholder="#8A9A86" required>
-          </label>
+<div class="form-group">
+<label class="label">Category</label>
+<select id="prodCategory" required>
+<option value="Kurtas">Kurtas & Sets</option>
+<option value="Dresses">Western Dresses</option>
+<option value="Co-ords">Co-ord Sets</option>
+<option value="Sarees">Pure Silk & Sarees</option>
+</select>
+</div>
 
-          <label class="form-label">
-            Product image
-            <input class="form-control" id="fileInput" name="image" type="file" accept="image/*" required>
-          </label>
+<div class="form-group full">
+<label class="label">Product Title</label>
+<input type="text" id="prodTitle" class="input" placeholder="e.g. Mulmul Embroidered Anarkali Set" required oninput="autoPopulateSlug(this.value)" />
+</div>
 
-          <img class="preview" id="imagePreview" alt="Selected product preview" hidden>
+<!-- SLUG & TOKEN URL CONFIGURATION -->
+<div class="form-group">
+<label class="label">Product URL Slug</label>
+<input type="text" id="prodSlug" class="input" placeholder="mulmul-embroidered-anarkali-set" required />
+<span class="hint">Public link: <code>yourstore.com/?p=your-slug</code></span>
+</div>
 
-          <div class="form-message" id="adminMessage" role="status"></div>
-          <button class="primary-button" id="saveProductButton" type="submit">Publish product</button>
-        </form>
-      </section>
+<div class="form-group">
+<label class="label">Private Token (Secret / Shareable Link)</label>
+<div style="display: flex; gap: 6px;">
+<input type="text" id="prodToken" class="input" placeholder="tok_xxxxxx" required />
+<button type="button" class="btn btn-copy" onclick="regenerateToken()">New</button>
+</div>
+<span class="hint">Token link: <code>yourstore.com/?token=your-token</code></span>
+</div>
 
-      <section class="admin-card">
-        <h2>Published products</h2>
-        <div class="admin-product-list" id="adminProductList">
-          <div class="empty-state">Loading…</div>
-        </div>
-      </section>
-    </div>
-  </main>
+<div class="form-group">
+<label class="label">Sale Price (₹)</label>
+<input type="number" id="prodPrice" class="input" placeholder="2499" required />
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase.js"></script>
-  <script src="/js/admin.js"></script>
+<div class="form-group">
+<label class="label">MRP / Original Price (₹)</label>
+<input type="number" id="prodMrp" class="input" placeholder="3499" required />
+</div>
+
+<div class="form-group">
+<label class="label">Highlight Tag (Optional)</label>
+<input type="text" id="prodTag" class="input" placeholder="e.g. Bestseller, Trending, New" />
+</div>
+
+<div class="form-group">
+<label class="label">Bought This Month (Social Proof)</label>
+<input type="text" id="prodBought" class="input" placeholder="e.g. 450+ bought this month" />
+</div>
+
+<!-- IMAGES -->
+<div class="form-group full">
+<label class="label">Image URLs (comma-separated or one per line)</label>
+<textarea id="prodImages" class="input" rows="3" placeholder="https://images.unsplash.com/... , https://images.unsplash.com/..." required></textarea>
+<span class="hint">Paste direct image links. First image is the main cover.</span>
+</div>
+
+<!-- COLOR SWATCHES -->
+<div class="form-group full">
+<label class="label">Colors (Format: Name | Hex code)</label>
+<div id="colorsContainer" class="dynamic-list">
+<!-- Color row items -->
+</div>
+<button type="button" class="btn btn-copy btn-sm" onclick="addColorRow()" style="margin-top: 6px; width: fit-content;">+ Add Color</button>
+</div>
+
+<!-- SPECIFICATIONS -->
+<div class="form-group full">
+<label class="label">Specifications (one bullet per line)</label>
+<textarea id="prodSpecs" class="input" rows="4" placeholder="Fabric: 100% Pure Mulmul Cotton&#10;Set Contains: 1 Kurta, 1 Pant, 1 Dupatta&#10;Care: Dry clean recommended"></textarea>
+</div>
+
+</div>
+
+<div style="display: flex; gap: 10px; margin-top: 18px;">
+<button type="submit" class="btn btn-dark" id="saveBtn">Save Product</button>
+<button type="button" class="btn btn-copy" onclick="resetForm()">Clear Form</button>
+</div>
+</form>
+</div>
+
+<!-- INVENTORY LIST -->
+<div class="card">
+<h2 class="card-title">Existing Products (<span id="totalItemsCount">0</span>)</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>Code</th>
+<th>Title</th>
+<th>Category</th>
+<th>Price</th>
+<th>Share Links</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="inventoryTableBody">
+<!-- Dynamically populated rows -->
+</tbody>
+</table>
+</div>
+</div>
+
+</div>
+</div>
+
+<div id="adminToast" class="toast">Action completed!</div>
+
+<!-- Shared Supabase & Admin Scripts -->
+<script src="js/supabase.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>
