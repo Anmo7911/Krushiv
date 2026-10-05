@@ -1,15 +1,17 @@
 // js/admin.js
-
 let cachedProducts = [];
 
-// -------------------------------------------------------------
 // 1. AUTHENTICATION & SESSION MANAGEMENT
-// -------------------------------------------------------------
 async function checkAuthSession() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    showDashboard(session.user);
-  } else {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      showDashboard(session.user);
+    } else {
+      showLogin();
+    }
+  } catch (err) {
+    console.error("Session check error:", err);
     showLogin();
   }
 }
@@ -22,7 +24,7 @@ function showLogin() {
 function showDashboard(user) {
   document.getElementById("loginCard").style.display = "none";
   document.getElementById("dashboardArea").style.display = "block";
-  document.getElementById("userDisplay").textContent = `Logged in as: ${user.email}`;
+  document.getElementById("userDisplay").textContent = "Logged in as: " + user.email;
   loadInventory();
   resetForm();
 }
@@ -34,10 +36,10 @@ async function handleLogin(e) {
   const errorElem = document.getElementById("loginError");
   errorElem.textContent = "Signing in...";
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
   if (error) {
     errorElem.textContent = error.message;
-  } else {
+  } else if (data && data.user) {
     errorElem.textContent = "";
     showDashboard(data.user);
   }
@@ -48,9 +50,7 @@ async function handleLogout() {
   showLogin();
 }
 
-// -------------------------------------------------------------
 // 2. SLUG & TOKEN GENERATORS
-// -------------------------------------------------------------
 function autoPopulateSlug(title) {
   const slugInput = document.getElementById("prodSlug");
   if (!document.getElementById("editingId").value) {
@@ -62,35 +62,31 @@ function regenerateToken() {
   document.getElementById("prodToken").value = generateToken("tok");
 }
 
-// -------------------------------------------------------------
-// 3. DYNAMIC COLOR SWATCH INPUTS
-// -------------------------------------------------------------
-function addColorRow(name = "", hex = "#8A9A86") {
+// 3. DYNAMIC COLOR SWATCHES
+function addColorRow(name, hex) {
+  name = name || "";
+  hex = hex || "#8A9A86";
   const container = document.getElementById("colorsContainer");
   const div = document.createElement("div");
   div.className = "dynamic-row";
-  div.innerHTML = `
-    
-    
-    ✕
-  `;
+  div.innerHTML = '' +
+                  '' +
+                  '✕';
   container.appendChild(div);
 }
 
 function getColorsData() {
   const rows = document.querySelectorAll("#colorsContainer .dynamic-row");
   const colors = [];
-  rows.forEach(row => {
+  rows.forEach(function(row) {
     const name = row.querySelector(".color-name").value.trim();
     const hex = row.querySelector(".color-picker").value;
-    if (name) colors.push({ name, hex });
+    if (name) colors.push({ name: name, hex: hex });
   });
   return colors;
 }
 
-// -------------------------------------------------------------
-// 4. LOAD INVENTORY
-// -------------------------------------------------------------
+// 4. LOAD INVENTORY TABLE
 async function loadInventory() {
   const tbody = document.getElementById("inventoryTableBody");
-  tbody.innerHTML = `
+  tbody.innerHTML = '
