@@ -16,7 +16,6 @@
 --accent: #A86B58;
 --border: #E8E2D9;
 --muted: #78726D;
---wa-green: #25D366;
 --danger: #D9534F;
 --radius-sm: 6px;
 --radius-md: 10px;
@@ -34,7 +33,6 @@ body { background: var(--bg); color: var(--noir); font-family: var(--font-sans);
 .btn { padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease; }
 .btn-dark { background: var(--noir); color: #fff; }
 .btn-dark:hover { background: #333; }
-.btn-accent { background: var(--accent); color: #fff; }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
 .btn-copy { background: #EFEBE9; color: var(--noir); border: 1px solid var(--border); }
@@ -42,7 +40,6 @@ body { background: var(--bg); color: var(--noir); font-family: var(--font-sans);
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.03); }
 .card-title { font-family: var(--font-serif); font-size: 1.25rem; margin-bottom: 14px; }
 
-/* Form Styles */
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -54,11 +51,9 @@ padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius
 .input:focus, select:focus, textarea:focus { border-color: var(--noir); background: #FFF; }
 .hint { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
-/* Dynamic inputs (Colors/Specs) */
 .dynamic-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .dynamic-row { display: flex; gap: 8px; align-items: center; }
 
-/* Table Styles */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left; }
 th { background: #FAF7F2; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
@@ -66,7 +61,6 @@ td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: midd
 tr:hover { background: #FCFAF7; }
 .thumb { width: 44px; height: 55px; border-radius: 4px; object-fit: cover; }
 
-/* Toast Notice */
 .toast { position: fixed; bottom: 20px; right: 20px; background: var(--noir); color: #fff; padding: 10px 18px; border-radius: 30px; font-size: 0.82rem; display: none; z-index: 100; }
 </style>
 </head>
@@ -74,16 +68,16 @@ tr:hover { background: #FCFAF7; }
 
 <div class="admin-container">
 
-<!-- LOGIN PANEL (Visible when logged out) -->
+<!-- LOGIN PANEL -->
 <div id="loginCard" class="card" style="max-width: 420px; margin: 80px auto;">
 <h2 class="card-title" style="text-align: center;">ZAYA Admin Login</h2>
 <p style="font-size: 0.82rem; color: var(--muted); text-align: center; margin-bottom: 16px;">
 Sign in with your Supabase Admin credentials.
 </p>
-<form id="loginForm" onsubmit="handleLogin(event)">
+<form id="loginForm">
 <div class="form-group" style="margin-bottom: 12px;">
 <label class="label">Admin Email</label>
-<input type="email" id="loginEmail" class="input" required placeholder="admin@zaya.com" />
+<input type="email" id="loginEmail" class="input" required placeholder="kittufashionyt@gmail.com" />
 </div>
 <div class="form-group" style="margin-bottom: 16px;">
 <label class="label">Password</label>
@@ -94,7 +88,7 @@ Sign in with your Supabase Admin credentials.
 </form>
 </div>
 
-<!-- MAIN ADMIN DASHBOARD (Visible when logged in) -->
+<!-- MAIN ADMIN DASHBOARD -->
 <div id="dashboardArea" style="display: none;">
 
 <div class="top-header">
@@ -103,19 +97,18 @@ Sign in with your Supabase Admin credentials.
 <div style="font-size: 0.8rem; color: var(--muted);" id="userDisplay">Logged in</div>
 </div>
 <div style="display: flex; gap: 8px;">
-<a href="index.html" target="_blank" class="btn btn-copy">View Live Store ↗</a>
+<a href="/" target="_blank" class="btn btn-copy">View Live Store ↗</a>
 <button class="btn btn-dark" onclick="handleLogout()">Sign Out</button>
 </div>
 </div>
 
-<!-- PRODUCT CREATION / EDITING FORM -->
+<!-- PRODUCT FORM -->
 <div class="card">
 <h2 class="card-title" id="formHeader">Add New Product</h2>
-<form id="productForm" onsubmit="handleSaveProduct(event)">
+<form id="productForm">
 <input type="hidden" id="editingId" value="" />
 
 <div class="form-grid">
-
 <div class="form-group">
 <label class="label">Product ID (Unique Code)</label>
 <input type="text" id="prodId" class="input" placeholder="e.g. ZY-101" required />
@@ -136,15 +129,14 @@ Sign in with your Supabase Admin credentials.
 <input type="text" id="prodTitle" class="input" placeholder="e.g. Mulmul Embroidered Anarkali Set" required oninput="autoPopulateSlug(this.value)" />
 </div>
 
-<!-- SLUG & TOKEN URL CONFIGURATION -->
 <div class="form-group">
 <label class="label">Product URL Slug</label>
-<input type="text" id="prodSlug" class="input" placeholder="mulmul-embroidered-anarkali-set" required />
+<input type="text" id="prodSlug" class="input" placeholder="mulmul-anarkali-set" required />
 <span class="hint">Public link: <code>yourstore.com/?p=your-slug</code></span>
 </div>
 
 <div class="form-group">
-<label class="label">Private Token (Secret / Shareable Link)</label>
+<label class="label">Private Token</label>
 <div style="display: flex; gap: 6px;">
 <input type="text" id="prodToken" class="input" placeholder="tok_xxxxxx" required />
 <button type="button" class="btn btn-copy" onclick="regenerateToken()">New</button>
@@ -164,36 +156,29 @@ Sign in with your Supabase Admin credentials.
 
 <div class="form-group">
 <label class="label">Highlight Tag (Optional)</label>
-<input type="text" id="prodTag" class="input" placeholder="e.g. Bestseller, Trending, New" />
+<input type="text" id="prodTag" class="input" placeholder="e.g. Bestseller, Trending" />
 </div>
 
 <div class="form-group">
-<label class="label">Bought This Month (Social Proof)</label>
+<label class="label">Bought This Month</label>
 <input type="text" id="prodBought" class="input" placeholder="e.g. 450+ bought this month" />
 </div>
 
-<!-- IMAGES -->
 <div class="form-group full">
-<label class="label">Image URLs (comma-separated or one per line)</label>
-<textarea id="prodImages" class="input" rows="3" placeholder="https://images.unsplash.com/... , https://images.unsplash.com/..." required></textarea>
-<span class="hint">Paste direct image links. First image is the main cover.</span>
+<label class="label">Image URLs (one per line or comma-separated)</label>
+<textarea id="prodImages" class="input" rows="3" placeholder="https://images.unsplash.com/..." required></textarea>
 </div>
 
-<!-- COLOR SWATCHES -->
 <div class="form-group full">
-<label class="label">Colors (Format: Name | Hex code)</label>
-<div id="colorsContainer" class="dynamic-list">
-<!-- Color row items -->
-</div>
+<label class="label">Colors</label>
+<div id="colorsContainer" class="dynamic-list"></div>
 <button type="button" class="btn btn-copy btn-sm" onclick="addColorRow()" style="margin-top: 6px; width: fit-content;">+ Add Color</button>
 </div>
 
-<!-- SPECIFICATIONS -->
 <div class="form-group full">
 <label class="label">Specifications (one bullet per line)</label>
-<textarea id="prodSpecs" class="input" rows="4" placeholder="Fabric: 100% Pure Mulmul Cotton&#10;Set Contains: 1 Kurta, 1 Pant, 1 Dupatta&#10;Care: Dry clean recommended"></textarea>
+<textarea id="prodSpecs" class="input" rows="4" placeholder="Fabric: 100% Pure Mulmul Cotton&#10;Care: Dry clean only"></textarea>
 </div>
-
 </div>
 
 <div style="display: flex; gap: 10px; margin-top: 18px;">
@@ -219,9 +204,7 @@ Sign in with your Supabase Admin credentials.
 <th>Actions</th>
 </tr>
 </thead>
-<tbody id="inventoryTableBody">
-<!-- Dynamically populated rows -->
-</tbody>
+<tbody id="inventoryTableBody"></tbody>
 </table>
 </div>
 </div>
@@ -231,8 +214,381 @@ Sign in with your Supabase Admin credentials.
 
 <div id="adminToast" class="toast">Action completed!</div>
 
-<!-- Shared Supabase & Admin Scripts -->
-<script src="js/supabase.js"></script>
-<script src="js/admin.js"></script>
+<!-- LOAD SHARED SUPABASE CLIENT FIRST -->
+<script src="/js/supabase.js"></script>
+
+<!-- INLINE ADMIN CONTROLLER SCRIPT -->
+<script>
+let cachedProducts = [];
+
+// 1. AUTHENTICATION
+async function checkAuthSession() {
+try {
+const res = await supabaseClient.auth.getSession();
+if (res && res.data && res.data.session && res.data.session.user) {
+showDashboard(res.data.session.user);
+} else {
+showLogin();
+}
+} catch (err) {
+console.error("Session check error:", err);
+showLogin();
+}
+}
+
+function showLogin() {
+document.getElementById("loginCard").style.display = "block";
+document.getElementById("dashboardArea").style.display = "none";
+}
+
+function showDashboard(user) {
+document.getElementById("loginCard").style.display = "none";
+document.getElementById("dashboardArea").style.display = "block";
+document.getElementById("userDisplay").textContent = "Logged in as: " + user.email;
+loadInventory();
+resetForm();
+}
+
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+e.preventDefault();
+const email = document.getElementById("loginEmail").value.trim();
+const password = document.getElementById("loginPassword").value;
+const errorElem = document.getElementById("loginError");
+errorElem.textContent = "Signing in...";
+
+try {
+const res = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+if (res.error) {
+errorElem.textContent = res.error.message;
+} else if (res.data && res.data.user) {
+errorElem.textContent = "";
+showDashboard(res.data.user);
+}
+} catch (err) {
+errorElem.textContent = "Connection error: " + err.message;
+}
+});
+
+async function handleLogout() {
+await supabaseClient.auth.signOut();
+showLogin();
+}
+
+// 2. SLUG & TOKEN
+function autoPopulateSlug(title) {
+const slugInput = document.getElementById("prodSlug");
+const editingId = document.getElementById("editingId");
+if (slugInput && !editingId.value) {
+slugInput.value = generateSlug(title);
+}
+}
+
+function regenerateToken() {
+document.getElementById("prodToken").value = generateToken("tok");
+}
+
+// 3. COLOR SWATCHES
+function addColorRow(name, hex) {
+name = name || "";
+hex = hex || "#8A9A86";
+const container = document.getElementById("colorsContainer");
+const div = document.createElement("div");
+div.className = "dynamic-row";
+
+const nameInput = document.createElement("input");
+nameInput.type = "text";
+nameInput.className = "input color-name";
+nameInput.placeholder = "Color Name";
+nameInput.value = name;
+nameInput.style.flex = "2";
+nameInput.required = true;
+
+const colorInput = document.createElement("input");
+colorInput.type = "color";
+colorInput.className = "color-picker";
+colorInput.value = hex;
+colorInput.style.width = "44px";
+colorInput.style.height = "38px";
+colorInput.style.border = "1px solid var(--border)";
+colorInput.style.borderRadius = "4px";
+
+const delBtn = document.createElement("button");
+delBtn.type = "button";
+delBtn.className = "btn btn-danger btn-sm";
+delBtn.textContent = "✕";
+delBtn.onclick = function() { div.remove(); };
+
+div.appendChild(nameInput);
+div.appendChild(colorInput);
+div.appendChild(delBtn);
+container.appendChild(div);
+}
+
+function getColorsData() {
+const rows = document.querySelectorAll("#colorsContainer .dynamic-row");
+const colors = [];
+rows.forEach(function(row) {
+const nameEl = row.querySelector(".color-name");
+const colorEl = row.querySelector(".color-picker");
+const name = nameEl ? nameEl.value.trim() : "";
+const hex = colorEl ? colorEl.value : "";
+if (name) colors.push({ name: name, hex: hex });
+});
+return colors;
+}
+
+// 4. INVENTORY TABLE
+async function loadInventory() {
+const tbody = document.getElementById("inventoryTableBody");
+tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Loading inventory...</td></tr>';
+
+const res = await supabaseClient.from("products").select("*").order("created_at", { ascending: false });
+if (res.error) {
+tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load products.</td></tr>';
+return;
+}
+
+cachedProducts = res.data || [];
+document.getElementById("totalItemsCount").textContent = String(cachedProducts.length);
+
+if (cachedProducts.length === 0) {
+tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">No products yet. Use the form above to add your first item!</td></tr>';
+return;
+}
+
+tbody.innerHTML = "";
+const siteOrigin = window.location.origin;
+
+cachedProducts.forEach(function(p) {
+let images = [];
+try { images = Array.isArray(p.images) ? p.images : JSON.parse(p.images || "[]"); } catch (e) { images = []; }
+const firstImg = images.length > 0 ? images[0] : "";
+const slugUrl = siteOrigin + "/?p=" + p.slug;
+const tokenUrl = siteOrigin + "/?token=" + p.token;
+
+const tr = document.createElement("tr");
+
+const tdImg = document.createElement("td");
+if (firstImg) {
+const img = document.createElement("img");
+img.src = firstImg;
+img.className = "thumb";
+tdImg.appendChild(img);
+} else {
+const placeholder = document.createElement("div");
+placeholder.className = "thumb";
+placeholder.style.background = "#EAE6DF";
+tdImg.appendChild(placeholder);
+}
+tr.appendChild(tdImg);
+
+const tdId = document.createElement("td");
+tdId.innerHTML = "<strong>" + p.id + "</strong>";
+tr.appendChild(tdId);
+
+const tdTitle = document.createElement("td");
+tdTitle.innerHTML = '<div style="font-weight:600;">' + p.title + '</div><div style="font-size:0.72rem; color:var(--muted);">' + (p.tag || "No Tag") + '</div>';
+tr.appendChild(tdTitle);
+
+const tdCat = document.createElement("td");
+tdCat.textContent = p.category;
+tr.appendChild(tdCat);
+
+const tdPrice = document.createElement("td");
+tdPrice.innerHTML = '<div>₹' + Number(p.price).toLocaleString("en-IN") + '</div><div style="font-size:0.72rem; color:var(--muted); text-decoration:line-through;">₹' + Number(p.mrp).toLocaleString("en-IN") + '</div>';
+tr.appendChild(tdPrice);
+
+const tdLinks = document.createElement("td");
+const linksWrap = document.createElement("div");
+linksWrap.style.display = "flex";
+linksWrap.style.flexDirection = "column";
+linksWrap.style.gap = "4px";
+
+const btnSlug = document.createElement("button");
+btnSlug.className = "btn btn-copy btn-sm";
+btnSlug.textContent = "📋 Slug Link";
+btnSlug.onclick = function() { copyToClipboard(slugUrl, "Slug link copied!"); };
+
+const btnToken = document.createElement("button");
+btnToken.className = "btn btn-copy btn-sm";
+btnToken.textContent = "🔑 Token Link";
+btnToken.onclick = function() { copyToClipboard(tokenUrl, "Token link copied!"); };
+
+linksWrap.appendChild(btnSlug);
+linksWrap.appendChild(btnToken);
+tdLinks.appendChild(linksWrap);
+tr.appendChild(tdLinks);
+
+const tdActions = document.createElement("td");
+const actionsWrap = document.createElement("div");
+actionsWrap.style.display = "flex";
+actionsWrap.style.gap = "6px";
+
+const btnEdit = document.createElement("button");
+btnEdit.className = "btn btn-copy btn-sm";
+btnEdit.textContent = "Edit";
+btnEdit.onclick = function() { editProduct(p.id); };
+
+const btnDelete = document.createElement("button");
+btnDelete.className = "btn btn-danger btn-sm";
+btnDelete.textContent = "Delete";
+btnDelete.onclick = function() { deleteProduct(p.id); };
+
+actionsWrap.appendChild(btnEdit);
+actionsWrap.appendChild(btnDelete);
+tdActions.appendChild(actionsWrap);
+tr.appendChild(tdActions);
+
+tbody.appendChild(tr);
+});
+}
+
+// 5. SAVE PRODUCT
+document.getElementById("productForm").addEventListener("submit", async function(e) {
+e.preventDefault();
+
+const id = document.getElementById("prodId").value.trim();
+const title = document.getElementById("prodTitle").value.trim();
+const category = document.getElementById("prodCategory").value;
+const slug = document.getElementById("prodSlug").value.trim();
+const token = document.getElementById("prodToken").value.trim();
+const price = parseFloat(document.getElementById("prodPrice").value);
+const mrp = parseFloat(document.getElementById("prodMrp").value);
+const tag = document.getElementById("prodTag").value.trim();
+const bought_this_month = document.getElementById("prodBought").value.trim();
+
+const rawImages = document.getElementById("prodImages").value;
+const images = rawImages.split(/[\n,]/).map(function(u) { return u.trim(); }).filter(function(u) { return u.length > 0; });
+
+const rawSpecs = document.getElementById("prodSpecs").value;
+const specs = rawSpecs.split("\n").map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+
+const colors = getColorsData();
+
+const payload = {
+id: id,
+title: title,
+category: category,
+slug: slug,
+token: token,
+price: price,
+mrp: mrp,
+tag: tag,
+bought_this_month: bought_this_month,
+images: images,
+colors: colors,
+specs: specs,
+is_active: true
+};
+
+const editingId = document.getElementById("editingId").value;
+const saveBtn = document.getElementById("saveBtn");
+saveBtn.disabled = true;
+saveBtn.textContent = "Saving...";
+
+let res;
+if (editingId) {
+res = await supabaseClient.from("products").update(payload).eq("id", editingId);
+} else {
+res = await supabaseClient.from("products").insert([payload]);
+}
+
+saveBtn.disabled = false;
+saveBtn.textContent = "Save Product";
+
+if (res.error) {
+alert("Error saving product: " + res.error.message);
+} else {
+showToast(editingId ? "Product updated!" : "Product added!");
+resetForm();
+loadInventory();
+}
+});
+
+// 6. EDIT & DELETE ACTIONS
+function editProduct(id) {
+const item = cachedProducts.find(function(p) { return p.id === id; });
+if (!item) return;
+
+document.getElementById("editingId").value = item.id;
+document.getElementById("formHeader").textContent = "Edit Product (" + item.id + ")";
+document.getElementById("saveBtn").textContent = "Update Product";
+
+document.getElementById("prodId").value = item.id;
+document.getElementById("prodId").disabled = true;
+document.getElementById("prodTitle").value = item.title;
+document.getElementById("prodCategory").value = item.category;
+document.getElementById("prodSlug").value = item.slug;
+document.getElementById("prodToken").value = item.token;
+document.getElementById("prodPrice").value = item.price;
+document.getElementById("prodMrp").value = item.mrp;
+document.getElementById("prodTag").value = item.tag || "";
+document.getElementById("prodBought").value = item.bought_this_month || "";
+
+let images = [];
+try { images = Array.isArray(item.images) ? item.images : JSON.parse(item.images || "[]"); } catch (e) { images = []; }
+document.getElementById("prodImages").value = images.join("\n");
+
+let specs = [];
+try { specs = Array.isArray(item.specs) ? item.specs : JSON.parse(item.specs || "[]"); } catch (e) { specs = []; }
+document.getElementById("prodSpecs").value = specs.join("\n");
+
+const container = document.getElementById("colorsContainer");
+container.innerHTML = "";
+let colors = [];
+try { colors = Array.isArray(item.colors) ? item.colors : JSON.parse(item.colors || "[]"); } catch (e) { colors = []; }
+if (colors.length > 0) {
+colors.forEach(function(c) { addColorRow(c.name, c.hex); });
+} else {
+addColorRow("Default", "#8A9A86");
+}
+
+window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function deleteProduct(id) {
+if (!confirm("Are you sure you want to delete product " + id + "?")) return;
+const res = await supabaseClient.from("products").delete().eq("id", id);
+if (res.error) {
+alert("Error deleting product: " + res.error.message);
+} else {
+showToast("Product deleted!");
+loadInventory();
+}
+}
+
+function resetForm() {
+document.getElementById("editingId").value = "";
+document.getElementById("formHeader").textContent = "Add New Product";
+document.getElementById("saveBtn").textContent = "Save Product";
+document.getElementById("prodId").disabled = false;
+document.getElementById("productForm").reset();
+
+const container = document.getElementById("colorsContainer");
+container.innerHTML = "";
+addColorRow("Default", "#8A9A86");
+regenerateToken();
+}
+
+// 7. UTILITIES
+function copyToClipboard(text, msg) {
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(text).then(function() { showToast(msg); });
+} else {
+prompt("Copy link:", text);
+}
+}
+
+function showToast(msg) {
+const toast = document.getElementById("adminToast");
+toast.textContent = msg;
+toast.style.display = "block";
+setTimeout(function() { toast.style.display = "none"; }, 2200);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+checkAuthSession();
+});
+</script>
 </body>
 </html>
