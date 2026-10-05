@@ -1,16 +1,14 @@
+// js/store.js
+
 // 1. STORE CONFIGURATION
 const WHATSAPP_PHONE = "919876543210"; // Enter your WhatsApp phone number with country code
 const CURRENCY = "₹";
 const COD_FEE = 50;
 
-// COUPONS CONFIGURATION
-const COUPONS = {
-"FESTIVE20": { type: "percent", val: 20, min: 0, desc: "20% Discount" },
-"WELCOME10": { type: "percent", val: 10, min: 0, desc: "10% Discount" },
-"FLAT500": { type: "flat", val: 500, min: 2000, desc: "₹500 Off (Min ₹2,000)" }
-};
+// DYNAMIC COUPONS FROM SUPABASE
+let activeCoupons = {};
 
-// STATIC REVIEWS CAROUSEL
+// REVIEWS
 const customerReviews = [
 { name: "Priya S.", city: "Delhi", stars: "★★★★★", text: "Got this for clg farewell last week.. fabric is pure mulmul not transparent at all. 10/10 fit for me" },
 { name: "Ananya Mehta", city: "Mumbai", stars: "★★★★★", text: "delivered in 3 days in malad. colour is slightly darker thn pic but looks v pretty after wearing ❤️" },
@@ -27,7 +25,7 @@ let products = [];
 let currentCategory = "All";
 let cart = [];
 let appliedCoupon = null;
-let selectedPayment = "UPI"; // 'UPI' or 'COD'
+let selectedPayment = "UPI";
 let currentProduct = null;
 let currentSize = "S";
 let currentColor = null;
@@ -35,10 +33,73 @@ let carouselTimers = {};
 let toastTimer = null;
 
 // -------------------------------------------------------------
-// 2. FETCH PRODUCTS FROM SUPABASE & HANDLE DIRECT URLS
+// 2. FETCH STORE SETTINGS, COUPONS & PRODUCTS
 // -------------------------------------------------------------
+async function initStore() {
+loadStoreSettings();
+loadCouponsFromDb();
+loadProductsFromSupabase();
+}
+
+async function loadStoreSettings() {
+try {
+const { data } = await supabaseClient
+.from("store_settings")
+.select("value")
+.eq("key", "top_bar_text")
+.maybeSingle();
+
+if (data && data.value) {
+const bar = document.querySelector(".top-bar");
+if (bar) bar.innerHTML = data.value;
+}
+} catch (e) {
+console.warn("Using default top bar text");
+}
+}
+
+async function loadCouponsFromDb() {
+try {
+const { data } = await supabaseClient
+.from("coupons")
+.select("*")
+.eq("is_active", true);
+
+if (data && data.length > 0) {
+activeCoupons = {};
+data.forEach(c => {
+activeCoupons[c.code] = {
+type: c.type,
+val: Number(c.val),
+min: Number(c.min_order || 0),
+desc: c.description || (c.type === 'percent' ? `${c.val}% OFF` : `₹${c.val} OFF`)
+};
+});
+
+renderCouponPills();
+}
+} catch (e) {
+console.warn("Could not load coupons from DB, using defaults");
+}
+}
+
+function renderCouponPills() {
+const container = document.querySelector(".pills-group");
+if (!container) return;
+
+const codes = Object.keys(activeCoupons);
+if (codes.length === 0) return;
+
+container.innerHTML = codes.map(code => {
+const rule = activeCoupons[code];
+return `<span class="chip-code" onclick="quickCoupon('${code}')">${code} (${rule.desc})</span>`;
+}).join("");
+}
+
 async function loadProductsFromSupabase() {
 const grid = document.getElementById("productGrid");
+if (!grid) return;
+
 grid.innerHTML = `
 <div class="empty-grid-msg">
 <div style="font-size: 1.8rem; margin-bottom: 8px;">⏳</div>
@@ -47,7 +108,10 @@ grid.innerHTML = `
 `;
 
 try {
-const { data, error } = await supabaseClient.from('products').select('*')
+const { data, error } = await supabaseClient
+.from('products')
+.select('*')
+.eq('is_active', true)
 .order('created_at', { ascending: false });
 
 if (error) throw error;
@@ -62,8 +126,6 @@ specs: Array.isArray(p.specs) ? p.specs : JSON.parse(p.specs || '[]')
 }));
 
 renderCatalog();
-
-// Check if URL has a direct product slug or token
 handleUrlRouting();
 } catch (err) {
 console.error("Error fetching products:", err);
@@ -77,7 +139,9 @@ grid.innerHTML = `
 }
 }
 
-// Check for ?p=slug or ?token=abc in the current URL
+// -------------------------------------------------------------
+// 3. SLUG & TOKEN URL ROUTING
+// -------------------------------------------------------------
 function handleUrlRouting() {
 const urlParams = new URLSearchParams(window.location.search);
 const slugParam = urlParams.get('p') || urlParams.get('slug');
@@ -99,7 +163,6 @@ return;
 }
 }
 
-// Also check hash #item-ZY-101
 if (window.location.hash.startsWith('#item-')) {
 const id = window.location.hash.replace('#item-', '');
 const match = products.find(p => p.id === id);
@@ -108,7 +171,7 @@ if (match) showProductDetails(match.id);
 }
 
 // -------------------------------------------------------------
-// 3. SCROLL-TRIGGERED FADE-UP ANIMATION OBSERVER
+// 4. ANIMATION OBSERVER
 // -------------------------------------------------------------
 function setupScrollObserver() {
 const observer = new IntersectionObserver((entries) => {
@@ -124,7 +187,7 @@ document.querySelectorAll('.fade-up-init').forEach(el => observer.observe(el));
 }
 
 // -------------------------------------------------------------
-// 4. RENDER CATALOG WITH STAGGERED CAROUSEL SLIDES
+// 5. RENDER CATALOG
 // -------------------------------------------------------------
 function renderCatalog() {
 Object.values(carouselTimers).forEach(timer => {
@@ -196,7 +259,6 @@ Add to Cart
 `;
 }).join("");
 
-// Staggered carousel animation for catalog cards
 const durations = [3200, 4200, 3600, 4800, 3900, 5200];
 list.forEach((item, index) => {
 if (item.images.length > 1) {
@@ -234,7 +296,7 @@ carouselTimers[id] = { timeout: timeoutId, interval: null };
 }
 
 // -------------------------------------------------------------
-// 5. CATEGORY SELECTION
+// 6. CATEGORIES
 // -------------------------------------------------------------
 function setCategory(cat) {
 currentCategory = cat;
@@ -245,7 +307,7 @@ renderCatalog();
 }
 
 // -------------------------------------------------------------
-// 6. PRODUCT DETAILS PAGE (PDP)
+// 7. PRODUCT DETAILS PAGE (PDP)
 // -------------------------------------------------------------
 function showProductDetails(id) {
 const item = products.find(p => p.id === id);
@@ -280,7 +342,6 @@ offElem.style.display = "inline-block";
 offElem.style.display = "none";
 }
 
-// 90% / 10% Peek Slider
 const peekSlider = document.getElementById("pdpPeekSlider");
 const displayImages = item.images.length > 0 ? item.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80'];
 peekSlider.innerHTML = displayImages.map(img => `
@@ -290,7 +351,6 @@ peekSlider.innerHTML = displayImages.map(img => `
 `).join("");
 peekSlider.scrollLeft = 0;
 
-// Colors group
 const colorGroup = document.getElementById("pdpColorsGroup");
 document.getElementById("pdpSelectedColorName").textContent = currentColor;
 if (item.colors && item.colors.length > 0) {
@@ -307,10 +367,8 @@ onclick="pickPdpColor('${c.name}', this)">
 colorGroup.parentElement.style.display = "none";
 }
 
-// Sizes: Reset to S
 pickPdpSize("S");
 
-// Specifications
 const specsList = document.getElementById("pdpSpecsList");
 if (item.specs && item.specs.length > 0) {
 specsList.innerHTML = item.specs.map(spec => `
@@ -320,7 +378,6 @@ specsList.innerHTML = item.specs.map(spec => `
 specsList.innerHTML = `<li><span class="spec-bullet">✓</span> Pure designer artisanal cut and tailored silhouette.</li>`;
 }
 
-// Ensure accordions are closed by default
 document.querySelectorAll(".accordion-content").forEach(el => el.style.display = "none");
 document.querySelectorAll(".acc-toggle-icon").forEach(el => {
 el.textContent = "+";
@@ -330,12 +387,10 @@ el.style.transform = "rotate(0deg)";
 renderReviewsMarquee();
 renderSimilarProducts(item);
 
-// Switch view
 document.getElementById("catalogView").classList.remove("active");
 document.getElementById("pdpView").classList.add("active");
 window.scrollTo({ top: 0, behavior: "smooth" });
 
-// Update URL to clean slug
 if (item.slug) {
 window.history.pushState({}, "", `?p=${item.slug}`);
 }
@@ -415,7 +470,7 @@ handleUrlRouting();
 });
 
 // -------------------------------------------------------------
-// 7. SIDEBAR & POPUPS
+// 8. SIDEBAR & MODALS
 // -------------------------------------------------------------
 function toggleSidebar(open) {
 document.getElementById("mobileSidebar").classList.toggle("open", open);
@@ -449,7 +504,6 @@ window.open(waUrl, "_blank");
 closeTrackModalDirect();
 }
 
-// LEGAL POLICIES
 const legalContent = {
 privacy: {
 title: "Privacy Policy",
@@ -492,7 +546,7 @@ if (e.target.id === "legalModal") closeLegalModalDirect();
 }
 
 // -------------------------------------------------------------
-// 8. CART & CHECKOUT
+// 9. CART & CHECKOUT
 // -------------------------------------------------------------
 function addCurrentPdp(isDirectOrder) {
 if (currentProduct) {
@@ -528,7 +582,6 @@ document.body.style.overflow = open ? "hidden" : "auto";
 
 document.getElementById("openBagTrigger").addEventListener("click", () => toggleBagDrawer(true));
 
-// COUPON LOGIC
 function quickCoupon(code) {
 document.getElementById("couponInput").value = code;
 applyCoupon();
@@ -546,15 +599,15 @@ status.textContent = "Please enter a code.";
 return;
 }
 
-if (!COUPONS[code]) {
+const rule = activeCoupons[code];
+if (!rule) {
 status.style.color = "#D9534F";
-status.textContent = "Invalid code. Try FESTIVE20 or WELCOME10.";
+status.textContent = "Invalid or expired code.";
 appliedCoupon = null;
 updateBagDisplay();
 return;
 }
 
-const rule = COUPONS[code];
 if (subtotal < rule.min) {
 status.style.color = "#D9534F";
 status.textContent = `Requires minimum bag value of ${CURRENCY}${rule.min}.`;
@@ -654,9 +707,9 @@ Color: <strong>${item.color}</strong> | Size: <strong>${item.size}</strong>
 }
 
 // -------------------------------------------------------------
-// 9. WHATSAPP CHECKOUT SUBMISSION
+// 10. WHATSAPP CHECKOUT + ORDER LOGGING TO SUPABASE
 // -------------------------------------------------------------
-function submitOrderToWhatsApp() {
+async function submitOrderToWhatsApp() {
 if (cart.length === 0) {
 alert("Your shopping bag is empty.");
 return;
@@ -694,6 +747,23 @@ discount = appliedCoupon.type === "percent"
 }
 const codExtra = (selectedPayment === "COD") ? COD_FEE : 0;
 const payable = Math.max(0, subtotal - discount + codExtra);
+
+try {
+await supabaseClient.from("orders").insert([{
+customer_name: name,
+customer_phone: phone,
+delivery_address: addr1,
+landmark: nearby,
+pincode: pincode,
+payment_method: selectedPayment,
+subtotal: subtotal,
+discount: discount,
+total: payable,
+items: cart.map(i => ({ id: i.id, title: i.title, color: i.color, size: i.size, qty: i.qty, price: i.price }))
+}]);
+} catch (e) {
+console.warn("Audit order log error:", e);
+}
 
 const itemsSummary = cart.map((item, i) =>
 `${i + 1}. *${item.title}*\n • Color: ${item.color}\n • Size: ${item.size}\n • Qty: ${item.qty}\n • Price: ${CURRENCY}${item.price * item.qty}`
@@ -739,6 +809,7 @@ window.open(waUrl, "_blank");
 
 function showToast(msg) {
 const toast = document.getElementById("toastNotice");
+if (!toast) return;
 toast.textContent = `✓ ${msg}`;
 toast.classList.add("show");
 
@@ -748,10 +819,7 @@ toast.classList.remove("show");
 }, 1400);
 }
 
-// -------------------------------------------------------------
-// 10. ON PAGE LOAD
-// -------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-loadProductsFromSupabase();
+initStore();
 updateBagDisplay();
 });
