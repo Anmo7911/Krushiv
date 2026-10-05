@@ -69,9 +69,34 @@ function addColorRow(name, hex) {
   const container = document.getElementById("colorsContainer");
   const div = document.createElement("div");
   div.className = "dynamic-row";
-  div.innerHTML = '' +
-                  '' +
-                  '✕';
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "input color-name";
+  nameInput.placeholder = "Color Name";
+  nameInput.value = name;
+  nameInput.style.flex = "2";
+  nameInput.required = true;
+
+  const colorInput = document.createElement("input");
+  colorInput.type = "color";
+  colorInput.className = "color-picker";
+  colorInput.value = hex;
+  colorInput.style.width = "44px";
+  colorInput.style.height = "38px";
+  colorInput.style.border = "1px solid var(--border)";
+  colorInput.style.borderRadius = "4px";
+  colorInput.style.cursor = "pointer";
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "btn btn-danger btn-sm";
+  delBtn.textContent = "✕";
+  delBtn.onclick = function() { div.remove(); };
+
+  div.appendChild(nameInput);
+  div.appendChild(colorInput);
+  div.appendChild(delBtn);
   container.appendChild(div);
 }
 
@@ -86,7 +111,7 @@ function getColorsData() {
   return colors;
 }
 
-// 4. LOAD INVENTORY TABLE
+// 4. LOAD INVENTORY (SAFE DOM NODES)
 async function loadInventory() {
   const tbody = document.getElementById("inventoryTableBody");
   tbody.innerHTML = '
