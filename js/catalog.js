@@ -1,202 +1,156 @@
-const WHATSAPP_PHONE = ""; 
-// Set the store WhatsApp number in international format, e.g. "919876543210".
-
-let catalogProducts = [];
-let activeCategory = "All";
-
-document.addEventListener("DOMContentLoaded", initCatalog);
+let catalogData = [];
+let currentCategory = "All";
+let cart = JSON.parse(localStorage.getItem("zaya_cart") || "[]");
 
 async function initCatalog() {
-  renderAuthAction();
-  bindCatalogEvents();
-  await loadCatalog();
-}
+  updateBagDisplay();
+  const { data: products, error } = await supabaseClient
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-function bindCatalogEvents() {
-  const categoryBar = document.getElementById("categoryBar");
-  if (categoryBar) {
-    categoryBar.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-category]");
-      if (!button) return;
-      setCategory(button.dataset.category);
-    });
+  if (error || !products || products.length === 0) {
+    document.getElementById("productGrid").innerHTML = "<p style='padding:20px;'>No pieces available right now.</p>";
+    return;
   }
 
-  const authAction = document.getElementById("authAction");
-  if (authAction) {
-    authAction.addEventListener("click", handleAuthAction);
-  }
+  catalogData = products;
+  renderGrid();
+  checkAuth();
 }
 
-async function loadCatalog() {
+function renderGrid() {
+  const filtered = currentCategory === "All" 
+    ? catalogData 
+    : catalogData.filter(p => p.category.toLowerCase() === currentCategory.toLowerCase());
+
   const grid = document.getElementById("productGrid");
-  if (!grid) return;
+  grid.innerHTML = filtered.map(item => {
+    const defaultColor = item.colors[0] || {};
+    const imgUrl = defaultColor.image || "https://images.unsplash.com/photo-1610030469983-98e550d6193c";
+    const colorParam = defaultColor.name ? `?color=${encodeURIComponent(defaultColor.name.toLowerCase().replace(/\s+/g, '-'))}` : "";
+    const offPct = Math.round(((item.mrp - item.price) / item.mrp) * 100);
 
-  if (!window.ZayaSupabase?.isConfigured) {
-    grid.innerHTML = `
-      <div class="state-card">
-        <strong>Store configuration required</strong>
-        <p>Add the Supabase URL and publishable key in <code>js/supabase.js</code>.</p>
-      </div>`;
+    return `
+      <article class="prod-card">
+        <a href="/product/${item.token}${colorParam}" class="card-img-wrap">
+          ${item.tag ? `<span class="tag-chip">${item.tag}</span>` : ""}
+          <img src="${imgUrl}" alt="${item.title}" loading="lazy" />
+        </a>
+        <div class="prod-info">
+          <div class="rating-row">
+            <span class="rating-stars">★ 4.9</span>
+            <span class="rating-count">(180+)</span>
+          </div>
+          <span class="prod-cat">${item.category}</span>
+          <a href="/product/${item.token}${colorParam}" class="prod-name">${item.title}</a>
+          <div class="prod-price-row">
+            <span class="val-sale">₹${Number(item.price).toLocaleString('en-IN')}</span>
+            <span class="val-mrp">₹${Number(item.mrp).toLocaleString('en-IN')}</span>
+            <span class="val-off">${offPct}% OFF</span>
+          </div>
+          <button class="btn-add-cart-single" onclick="window.location.href='/product/${item.token}${colorParam}'">
+            Select Size & Color
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll(".cat-pill").forEach(b => {
+    b.classList.toggle("active", b.textContent.includes(cat) || (cat === "All" && b.textContent.includes("All")));
+  });
+  renderGrid();
+  toggleSidebar(false);
+}
+
+function toggleSidebar(open) {
+  document.getElementById("mobileSidebar").classList.toggle("open", open);
+  document.getElementById("sidebarOverlay").classList.toggle("open", open);
+}
+
+function toggleBagDrawer(open) {
+  document.getElementById("bagDrawer").classList.toggle("open", open);
+  document.getElementById("drawerScrim").classList.toggle("open", open);
+}
+
+function updateBagDisplay() {
+  const totalCount = cart.reduce((sum, i) => sum + i.qty, 0);
+  const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  document.getElementById("headerBagCount").textContent = totalCount;
+  document.getElementById("drawerCount").textContent = totalCount;
+  document.getElementById("ledgerSubtotal").textContent = `₹${subtotal.toLocaleString('en-IN')}`;
+  document.getElementById("ledgerTotal").textContent = `₹${subtotal.toLocaleString('en-IN')}`;
+  
+  const container = document.getElementById("bagItemsContainer");
+  if (cart.length === 0) {
+    container.innerHTML = `<p style="text-align:center; padding:30px; color:var(--muted);">Your shopping bag is empty.</p>`;
     return;
   }
 
-  grid.innerHTML = `<div class="state-card"><span class="loader"></span><p>Curating the collection…</p></div>`;
-
-  const { data, error } = await supabaseClient
-    .from("products")
-    .select("id, token, title, category, price, mrp, colors, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    grid.innerHTML = `
-      <div class="state-card">
-        <strong>Unable to load the collection</strong>
-        <p>${escapeHtml(error.message)}</p>
-      </div>`;
-    return;
-  }
-
-  catalogProducts = Array.isArray(data) ? data : [];
-  buildCategoryBar();
-  renderProducts();
-}
-
-function buildCategoryBar() {
-  const categories = [
-    "All",
-    ...new Set(
-      catalogProducts
-        .map((product) => String(product.category || "").trim())
-        .filter(Boolean)
-    )
-  ];
-
-  const bar = document.getElementById("categoryBar");
-  if (!bar) return;
-
-  bar.innerHTML = categories
-    .map(
-      (category) => `
-      <button class="category-pill ${category === activeCategory ? "active" : ""}"
-              type="button"
-              data-category="${escapeHtml(category)}">
-        ${escapeHtml(category)}
-      </button>`
-    )
-    .join("");
-}
-
-function setCategory(category) {
-  activeCategory = category;
-  buildCategoryBar();
-  renderProducts();
-}
-
-function renderProducts() {
-  const grid = document.getElementById("productGrid");
-  if (!grid) return;
-
-  const visible =
-    activeCategory === "All"
-      ? catalogProducts
-      : catalogProducts.filter(
-          (product) =>
-            String(product.category || "").toLowerCase() ===
-            activeCategory.toLowerCase()
-        );
-
-  if (!visible.length) {
-    grid.innerHTML = `
-      <div class="state-card">
-        <strong>No pieces in this collection yet.</strong>
-        <p>Check another category or add products from the admin portal.</p>
-      </div>`;
-    return;
-  }
-
-  grid.innerHTML = visible.map(renderProductCard).join("");
-}
-
-function renderProductCard(product) {
-  const first = getFirstVariant(product);
-  const image = first?.image || "";
-  const discount = calculateDiscount(product.price, product.mrp);
-  const href = getProductUrl(product, first?.name);
-
-  return `
-    <article class="product-card">
-      <a class="product-image-link" href="${escapeHtml(href)}" aria-label="View ${escapeHtml(product.title)}">
-        <div class="product-image-wrap">
-          ${
-            image
-              ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.title)}" loading="lazy" decoding="async">`
-              : `<div class="image-placeholder">ZAYA</div>`
-          }
-          ${discount ? `<span class="product-badge">${discount}% OFF</span>` : ""}
+  container.innerHTML = cart.map((item, idx) => `
+    <div class="bag-row">
+      <div class="bag-row-thumb"><img src="${item.image}" alt="${item.title}"></div>
+      <div class="bag-row-info">
+        <div style="font-size:0.84rem; font-weight:600;">${item.title}</div>
+        <div style="font-size:0.72rem; color:var(--muted);">Color: <strong>${item.color}</strong> | Size: <strong>${item.size}</strong></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-weight:700;">₹${(item.price * item.qty).toLocaleString('en-IN')}</span>
+          <div class="qty-wrap">
+            <button class="step-btn" onclick="changeQty(${idx}, -1)">−</button>
+            <span>${item.qty}</span>
+            <button class="step-btn" onclick="changeQty(${idx}, 1)">+</button>
+          </div>
         </div>
-      </a>
-
-      <div class="product-card-body">
-        <div class="product-category">${escapeHtml(product.category || "Collection")}</div>
-        <h2 class="product-title">${escapeHtml(product.title)}</h2>
-
-        <div class="price-row">
-          <strong>${formatINR(product.price)}</strong>
-          ${
-            Number(product.mrp) > Number(product.price)
-              ? `<span class="mrp">${formatINR(product.mrp)}</span>`
-              : ""
-          }
-        </div>
-
-        <div class="swatch-row" aria-label="Available colors">
-          ${(Array.isArray(product.colors) ? product.colors : [])
-            .slice(0, 5)
-            .map(
-              (color) =>
-                `<span class="mini-swatch" title="${escapeHtml(color.name)}"
-                       style="background:${escapeHtml(color.hex || "#ddd")}"></span>`
-            )
-            .join("")}
-        </div>
-
-        <a class="card-link" href="${escapeHtml(href)}">View piece <span>→</span></a>
       </div>
-    </article>`;
+    </div>
+  `).join("");
 }
 
-async function renderAuthAction() {
-  const button = document.getElementById("authAction");
-  if (!button || !window.ZayaSupabase?.isConfigured) return;
-
-  const { data } = await supabaseClient.auth.getSession();
-  const user = data?.session?.user;
-
-  button.textContent = user ? "Sign Out" : "Sign In";
-  button.dataset.authenticated = user ? "true" : "false";
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  localStorage.setItem("zaya_cart", JSON.stringify(cart));
+  updateBagDisplay();
 }
 
-async function handleAuthAction(event) {
-  event.preventDefault();
-  if (!window.ZayaSupabase?.isConfigured) {
-    window.location.href = "/auth.html";
-    return;
+function submitOrderToWhatsApp() {
+  if (cart.length === 0) return alert("Bag is empty");
+  const name = document.getElementById("custName").value.trim();
+  const addr = document.getElementById("custAddr1").value.trim();
+  const pin = document.getElementById("custPincode").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+
+  if (!name || !addr || pin.length !== 6 || phone.length !== 10) {
+    return alert("Please fill valid delivery details.");
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  if (data?.session) {
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-      alert(error.message);
-      return;
-    }
-    await renderAuthAction();
-    return;
-  }
+  const items = cart.map(i => `• ${i.title} (${i.color} / ${i.size}) x${i.qty} - ₹${i.price * i.qty}`).join("\n");
+  const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+  const msg = `✨ *NEW ORDER — ZAYA* ✨\n\n*Customer:*\n${name}\n${phone}\n${addr}, Pincode: ${pin}\n\n*Items:*\n${items}\n\n*Total Payable: ₹${total}*`;
 
-  window.location.href = "/auth.html";
+  window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, "_blank");
 }
 
-window.addEventListener("pageshow", renderAuthAction);
+function openTrackModal() { document.getElementById("trackModal").style.display = "flex"; }
+function closeTrackModalDirect() { document.getElementById("trackModal").style.display = "none"; }
+function closeTrackModal(e) { if (e.target.id === "trackModal") closeTrackModalDirect(); }
+function submitTrackingInquiry() {
+  const val = document.getElementById("trackInput").value.trim();
+  if (!val) return alert("Enter order or phone number");
+  window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent("Track order: " + val)}`, "_blank");
+}
+
+async function checkAuth() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const link = document.getElementById("authSideLink");
+  if (session) {
+    link.textContent = "Sign Out";
+    link.onclick = async () => { await supabaseClient.auth.signOut(); window.location.reload(); };
+  }
+}
+
+initCatalog();
