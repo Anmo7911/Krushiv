@@ -1,4 +1,4 @@
-// js/store.js
+// js/store.js - KRUSHIV ATELIER
 
 // 1. STORE CONFIGURATION
 const WHATSAPP_PHONE = "919876543210"; // Enter your WhatsApp phone number with country code
@@ -9,6 +9,9 @@ const COD_FEE = 50;
 let activeCoupons = {};
 let blockedCodPincodes = [];
 let countdownTimerInterval = null;
+let featuredAutoTimer = null;
+let currentFeaturedIndex = 0;
+let featuredProductsList = [];
 
 // REVIEWS
 const customerReviews = [
@@ -35,13 +38,55 @@ let carouselTimers = {};
 let toastTimer = null;
 
 // -------------------------------------------------------------
+// DETERMINISTIC SOCIAL PROOF HELPERS (CONSISTENT NUMBERS)
+// -------------------------------------------------------------
+function getDeterministicReviews(idStr) {
+let hash = 0;
+for (let i = 0; i < idStr.length; i++) {
+hash = (hash << 5) - hash + idStr.charCodeAt(i);
+hash |= 0;
+}
+return 85 + Math.abs(hash % 265); // 85 to 350 reviews
+}
+
+function getDeterministicSold(idStr) {
+let hash = 0;
+for (let i = 0; i < idStr.length; i++) {
+hash = (hash << 3) - hash + idStr.charCodeAt(i);
+hash |= 0;
+}
+return 180 + Math.abs(hash % 420); // 180 to 600 sold
+}
+
+// -------------------------------------------------------------
 // 2. FETCH STORE SETTINGS, TIMER, COUPONS & PRODUCTS
 // -------------------------------------------------------------
 async function initStore() {
+renderGhostSkeletons();
 loadStoreSettings();
 loadCouponsFromDb();
 loadProductsFromSupabase();
 setupPincodeListener();
+}
+
+// A2. GHOST / SKELETON PRODUCT PATTERN LOADING
+function renderGhostSkeletons() {
+const grid = document.getElementById("productGrid");
+if (!grid) return;
+
+const skeletonHtml = Array(6).fill(0).map(() => `
+<div class="skeleton-card">
+<div class="skeleton-box skeleton-img"></div>
+<div class="skeleton-info">
+<div class="skeleton-box skeleton-line-sm"></div>
+<div class="skeleton-box skeleton-line-title"></div>
+<div class="skeleton-box skeleton-line-price"></div>
+<div class="skeleton-box skeleton-btn"></div>
+</div>
+</div>
+`).join("");
+
+grid.innerHTML = skeletonHtml;
 }
 
 async function loadStoreSettings() {
@@ -151,16 +196,6 @@ return `<span class="chip-code" onclick="quickCoupon('${code}')">${code} (${rule
 }
 
 async function loadProductsFromSupabase() {
-const grid = document.getElementById("productGrid");
-if (!grid) return;
-
-grid.innerHTML = `
-<div class="empty-grid-msg">
-<div style="font-size: 1.8rem; margin-bottom: 8px;">⏳</div>
-<div>Loading our collection...</div>
-</div>
-`;
-
 try {
 const { data, error } = await supabaseClient
 .from('products')
@@ -178,22 +213,32 @@ sizesStock = typeof p.sizes_stock === "string" ? JSON.parse(p.sizes_stock) : p.s
 }
 } catch(e) {}
 
+const detReviews = getDeterministicReviews(p.id || p.title);
+const detSold = getDeterministicSold(p.id || p.title);
+
 return {
 ...p,
 price: Number(p.price),
 mrp: Number(p.mrp),
+rating: p.rating || "4.9",
+reviews: p.reviews && p.reviews !== "0" ? p.reviews : String(detReviews),
+bought_this_month: p.bought_this_month || `${detSold}+ sold this month`,
 stock_qty: (p.stock_qty !== undefined && p.stock_qty !== null) ? Number(p.stock_qty) : 10,
 sizes_stock: sizesStock,
+is_featured: p.is_featured === true,
 images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
 colors: Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors || '[]'),
 specs: Array.isArray(p.specs) ? p.specs : JSON.parse(p.specs || '[]')
 };
 });
 
+renderFeaturedCarousel();
 renderCatalog();
 handleUrlRouting();
 } catch (err) {
 console.error("Error fetching products:", err);
+const grid = document.getElementById("productGrid");
+if (grid) {
 grid.innerHTML = `
 <div class="empty-grid-msg">
 <div style="font-size: 1.5rem; margin-bottom: 6px;">⚠️</div>
@@ -202,6 +247,103 @@ grid.innerHTML = `
 </div>
 `;
 }
+}
+}
+
+// -------------------------------------------------------------
+// A1. FEATURED PRODUCT CAROUSEL (REPLACES HERO CARD)
+// -------------------------------------------------------------
+function renderFeaturedCarousel() {
+const container = document.getElementById("featuredCarouselContainer");
+if (!container) return;
+
+featuredProductsList = products.filter(p => p.is_featured);
+if (featuredProductsList.length === 0) {
+featuredProductsList = products.slice(0, 4);
+}
+
+if (featuredProductsList.length === 0) {
+container.innerHTML = "";
+return;
+}
+
+currentFeaturedIndex = 0;
+if (featuredAutoTimer) clearInterval(featuredAutoTimer);
+
+container.innerHTML = `
+<div class="featured-carousel-wrap fade-up-init">
+<!-- Arrows -->
+<button class="featured-nav-btn featured-prev" onclick="moveFeaturedSlide(-1)" aria-label="Previous Featured">
+<i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+</button>
+<button class="featured-nav-btn featured-next" onclick="moveFeaturedSlide(1)" aria-label="Next Featured">
+<i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+</button>
+
+<!-- Slides Track -->
+<div class="featured-track" id="featuredTrack">
+${featuredProductsList.map(item => {
+const coverImg = item.images[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80';
+const tagText = item.tag || "Couture Highlight";
+return `
+<div class="featured-slide" style="background-image: url('${coverImg}');" onclick="showProductDetails('${item.id}')">
+<div class="featured-scrim"></div>
+<div class="featured-content">
+<span class="featured-tag">${tagText}</span>
+<h2 class="featured-title">${item.title}</h2>
+<div class="featured-meta">
+<span class="featured-price">${CURRENCY}${item.price.toLocaleString('en-IN')}</span>
+${item.mrp > item.price ? `<span class="featured-mrp">${CURRENCY}${item.mrp.toLocaleString('en-IN')}</span>` : ''}
+<span style="color:#25D366; font-size:0.78rem; font-weight:700;">★ ${item.rating} • ${item.bought_this_month}</span>
+</div>
+<div>
+<button class="btn-featured-shop" onclick="event.stopPropagation(); showProductDetails('${item.id}')">
+<span>Explore Piece</span>
+<i data-lucide="arrow-right" style="width: 15px; height: 15px;"></i>
+</button>
+</div>
+</div>
+</div>
+`;
+}).join("")}
+</div>
+
+<!-- Dash Pagination Bars -->
+<div class="featured-pagination-bars" id="featuredPaginationBars">
+${featuredProductsList.map((_, i) => `<span class="f-bar ${i === 0 ? 'active' : ''}" onclick="goToFeaturedSlide(${i})"></span>`).join("")}
+</div>
+</div>
+`;
+
+if (window.lucide) window.lucide.createIcons();
+
+if (featuredProductsList.length > 1) {
+featuredAutoTimer = setInterval(() => {
+moveFeaturedSlide(1);
+}, 5000);
+}
+}
+
+function moveFeaturedSlide(direction) {
+if (featuredProductsList.length <= 1) return;
+currentFeaturedIndex = (currentFeaturedIndex + direction + featuredProductsList.length) % featuredProductsList.length;
+updateFeaturedSlidePosition();
+}
+
+function goToFeaturedSlide(index) {
+currentFeaturedIndex = index;
+updateFeaturedSlidePosition();
+}
+
+function updateFeaturedSlidePosition() {
+const track = document.getElementById("featuredTrack");
+const bars = document.querySelectorAll("#featuredPaginationBars .f-bar");
+if (track) {
+track.style.transform = `translateX(-${currentFeaturedIndex * 100}%)`;
+}
+bars.forEach((bar, idx) => {
+bar.classList.toggle("active", idx === currentFeaturedIndex);
+});
 }
 
 // -------------------------------------------------------------
@@ -252,7 +394,7 @@ document.querySelectorAll('.fade-up-init').forEach(el => observer.observe(el));
 }
 
 // -------------------------------------------------------------
-// 5. RENDER CATALOG (WITH STOCK LEFT / OUT OF STOCK BADGES)
+// 5. RENDER CATALOG (INLINE RATING IN GREEN & SOLD COUNT)
 // -------------------------------------------------------------
 function renderCatalog() {
 Object.values(carouselTimers).forEach(timer => {
@@ -313,11 +455,15 @@ ${item.images.map((_, i) => `<span class="c-dot ${i === 0 ? 'active' : ''}"></sp
 </div>
 
 <div class="prod-info">
-<div class="rating-row">
-<span class="rating-stars">★ ${item.rating || '4.9'}</span>
-<span class="rating-count">(${item.reviews || '0'})</span>
+<!-- A4: INLINE GREEN RATING & SOLD THIS MONTH -->
+<div class="rating-sold-inline">
+<span class="rating-badge-green">
+<span>★</span>
+<span>${item.rating}</span>
+</span>
+<span class="rating-reviews-count">(${item.reviews})</span>
+<span class="inline-sold-badge">🔥 ${item.bought_this_month}</span>
 </div>
-${item.bought_this_month ? `<div class="bought-badge">🔥 ${item.bought_this_month}</div>` : ''}
 
 <span class="prod-cat">${item.category}</span>
 <h3 class="prod-name" title="${item.title}">${item.title}</h3>
@@ -384,7 +530,7 @@ renderCatalog();
 }
 
 // -------------------------------------------------------------
-// 7. PRODUCT DETAILS PAGE (PDP) WITH SIZE-LEVEL STOCK & PRODUCT LEFT
+// 7. PRODUCT DETAILS PAGE (PDP)
 // -------------------------------------------------------------
 function showProductDetails(id) {
 const item = products.find(p => p.id === id);
@@ -395,10 +541,10 @@ currentColor = (item.colors && item.colors.length > 0) ? item.colors[0].name : "
 
 document.getElementById("pdpCatName").textContent = item.category;
 document.getElementById("pdpItemTitle").textContent = item.title;
+
 document.getElementById("pdpRatingStars").textContent = `★ ${item.rating || '4.9'}`;
 document.getElementById("pdpRatingReviews").textContent = `(${item.reviews || '0'} Reviews)`;
 
-// Stock Left badge
 const boughtElem = document.getElementById("pdpBoughtStats");
 if (item.stock_qty <= 0) {
 boughtElem.textContent = "❌ Out of Stock";
@@ -431,15 +577,31 @@ offElem.style.display = "inline-block";
 offElem.style.display = "none";
 }
 
-// Peek Slider
+// B5: 90% / 10% PEEK SLIDER WITH CLICKABLE DOTS
 const peekSlider = document.getElementById("pdpPeekSlider");
+const dotsContainer = document.getElementById("pdpSliderDots");
 const displayImages = item.images.length > 0 ? item.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80'];
+
 peekSlider.innerHTML = displayImages.map(img => `
 <div class="pdp-peek-slide">
 <img src="${img}" alt="${item.title}">
 </div>
 `).join("");
 peekSlider.scrollLeft = 0;
+
+if (dotsContainer) {
+dotsContainer.innerHTML = displayImages.map((_, i) => `
+<span class="pdp-dot ${i === 0 ? 'active' : ''}" onclick="jumpPdpSlide(${i})"></span>
+`).join("");
+}
+
+peekSlider.onscroll = () => {
+const slideWidth = peekSlider.offsetWidth * 0.9;
+const activeDot = Math.round(peekSlider.scrollLeft / slideWidth);
+document.querySelectorAll("#pdpSliderDots .pdp-dot").forEach((d, i) => {
+d.classList.toggle("active", i === activeDot);
+});
+};
 
 // Colors
 const colorGroup = document.getElementById("pdpColorsGroup");
@@ -458,7 +620,7 @@ onclick="pickPdpColor('${c.name}', this)">
 colorGroup.parentElement.style.display = "none";
 }
 
-// A. SIZE-LEVEL STOCK MANAGEMENT
+// Size Selector with stock strike-through
 renderSizeSelectors(item);
 
 // Specs
@@ -482,13 +644,27 @@ renderSimilarProducts(item);
 
 updatePdpActionButtons(item);
 
+// View switch & Body Class for A3 (Chat Button Position)
 document.getElementById("catalogView").classList.remove("active");
 document.getElementById("pdpView").classList.add("active");
+document.body.classList.add("pdp-active");
 window.scrollTo({ top: 0, behavior: "smooth" });
+
+if (window.lucide) window.lucide.createIcons();
 
 if (item.slug) {
 window.history.pushState({}, "", `?p=${item.slug}`);
 }
+}
+
+function jumpPdpSlide(idx) {
+const peekSlider = document.getElementById("pdpPeekSlider");
+if (!peekSlider) return;
+const slideWidth = peekSlider.offsetWidth * 0.9;
+peekSlider.scrollTo({
+left: idx * slideWidth,
+behavior: "smooth"
+});
 }
 
 function renderSizeSelectors(item) {
@@ -518,7 +694,7 @@ ${sz}
 
 function handleSizeClick(sz, isAvail) {
 if (!isAvail) {
-showToast(`Size ${sz} is currently out of stock. Tap 'Order Now' to request restock via WhatsApp!`);
+showToast(`Size ${sz} is currently out of stock. You can still order via WhatsApp!`);
 return;
 }
 pickPdpSize(sz);
@@ -562,7 +738,7 @@ btn.onclick = () => addCurrentPdp(true);
 }
 
 function requestRestockOnWhatsApp(item) {
-const msg = `Hi ZAYA Team, I would like to request a restock/custom order for:\n*${item.title}*\nCode: ${item.id}\nColor: ${currentColor}\nSize: ${currentSize}\nPlease let me know when it will be available!`;
+const msg = `Hi KRUSHIV Team, I would like to request a restock/custom order for:\n*${item.title}*\nCode: ${item.id}\nColor: ${currentColor}\nSize: ${currentSize}\nPlease let me know when it will be available!`;
 const waUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 window.open(waUrl, "_blank");
 }
@@ -622,9 +798,11 @@ grid.innerHTML = similar.map(p => `
 `).join("");
 }
 
+// A3. RESET CHAT BUTTON POSITION ON RETURN TO HOME
 function openHomeView() {
 document.getElementById("pdpView").classList.remove("active");
 document.getElementById("catalogView").classList.add("active");
+document.body.classList.remove("pdp-active");
 window.history.pushState({}, "", window.location.pathname);
 window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -640,6 +818,7 @@ function toggleSidebar(open) {
 document.getElementById("mobileSidebar").classList.toggle("open", open);
 document.getElementById("sidebarOverlay").classList.toggle("open", open);
 document.body.style.overflow = open ? "hidden" : "auto";
+if (window.lucide) window.lucide.createIcons();
 }
 
 function openTrackModal() {
@@ -662,7 +841,7 @@ if (!val) {
 alert("Please enter your Phone Number or Order Code.");
 return;
 }
-const msg = `Hi ZAYA Team, I would like to track my order for Mobile/Order Code: ${val}. Please share the current dispatch & delivery status.`;
+const msg = `Hi KRUSHIV Team, I would like to track my order for Mobile/Order Code: ${val}. Please share the current dispatch & delivery status.`;
 const waUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 window.open(waUrl, "_blank");
 closeTrackModalDirect();
@@ -671,11 +850,11 @@ closeTrackModalDirect();
 const legalContent = {
 privacy: {
 title: "Privacy Policy",
-body: "At ZAYA, we are dedicated to protecting your personal data. We strictly use your name, shipping address, and phone number solely to prepare and fulfill your boutique orders via WhatsApp. We never sell, lease, or monetize your contact information with external marketing agencies."
+body: "At KRUSHIV, we are dedicated to protecting your personal data. We strictly use your name, shipping address, and phone number solely to prepare and fulfill your boutique orders via WhatsApp. We never sell, lease, or monetize your contact information with external marketing agencies."
 },
 terms: {
 title: "Terms & Conditions",
-body: "By shopping on ZAYA, you agree to our direct order processing terms. Orders placed via WhatsApp receive an official itemized confirmation bill before dispatch. Deliveries are executed via authorized express courier partners across India."
+body: "By shopping on KRUSHIV, you agree to our direct order processing terms. Orders placed via WhatsApp receive an official itemized confirmation bill before dispatch. Deliveries are executed via authorized express courier partners across India."
 },
 exchange: {
 title: "Exchange Policy",
@@ -810,6 +989,7 @@ function toggleBagDrawer(open) {
 document.getElementById("bagDrawer").classList.toggle("open", open);
 document.getElementById("drawerScrim").classList.toggle("open", open);
 document.body.style.overflow = open ? "hidden" : "auto";
+if (window.lucide) window.lucide.createIcons();
 }
 
 document.getElementById("openBagTrigger").addEventListener("click", () => toggleBagDrawer(true));
@@ -864,16 +1044,18 @@ updateBagDisplay();
 
 function updateBagDisplay() {
 const totalCount = cart.reduce((sum, i) => sum + i.qty, 0);
-const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+const countBadge = document.getElementById("headerBagCount");
+const drawerBadge = document.getElementById("drawerCount");
+if (countBadge) countBadge.textContent = totalCount;
+if (drawerBadge) drawerBadge.textContent = totalCount;
 
-document.getElementById("headerBagCount").textContent = totalCount;
-document.getElementById("drawerCount").textContent = totalCount;
-document.getElementById("ledgerSubtotal").textContent = `${CURRENCY}${subtotal.toLocaleString('en-IN')}`;
+const realSubtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+document.getElementById("ledgerSubtotal").textContent = `${CURRENCY}${realSubtotal.toLocaleString('en-IN')}`;
 
 let discountAmount = 0;
-if (appliedCoupon && subtotal > 0) {
+if (appliedCoupon && realSubtotal > 0) {
 discountAmount = appliedCoupon.type === "percent"
-? Math.round((subtotal * appliedCoupon.val) / 100)
+? Math.round((realSubtotal * appliedCoupon.val) / 100)
 : appliedCoupon.val;
 }
 
@@ -886,7 +1068,7 @@ document.getElementById("ledgerDiscountVal").textContent = `-${CURRENCY}${discou
 discountRow.style.display = "none";
 }
 
-const codExtra = (selectedPayment === "COD" && subtotal > 0) ? COD_FEE : 0;
+const codExtra = (selectedPayment === "COD" && realSubtotal > 0) ? COD_FEE : 0;
 const codRow = document.getElementById("ledgerCodRow");
 if (codExtra > 0) {
 codRow.style.display = "flex";
@@ -894,7 +1076,7 @@ codRow.style.display = "flex";
 codRow.style.display = "none";
 }
 
-const totalPayable = Math.max(0, subtotal - discountAmount + codExtra);
+const totalPayable = Math.max(0, realSubtotal - discountAmount + codExtra);
 document.getElementById("ledgerTotal").textContent = `${CURRENCY}${totalPayable.toLocaleString('en-IN')}`;
 
 const container = document.getElementById("bagItemsContainer");
@@ -939,7 +1121,7 @@ Color: <strong>${item.color}</strong> | Size: <strong>${item.size}</strong>
 }
 
 // -------------------------------------------------------------
-// 11. WHATSAPP CHECKOUT + ORDER LOGGING TO SUPABASE
+// 11. WHATSAPP CHECKOUT + ORDER AUDIT LOG
 // -------------------------------------------------------------
 async function submitOrderToWhatsApp() {
 if (cart.length === 0) {
@@ -1011,7 +1193,7 @@ const paymentText = (selectedPayment === "COD")
 : "UPI / Online Payment (Google Pay / PhonePe / Paytm)";
 
 const message =
-`✨ *NEW ORDER — ZAYA BOUTIQUE* ✨
+`✨ *NEW ORDER — KRUSHIV ATELIER* ✨
 
 *CUSTOMER DETAILS:*
 • Name: ${name}
@@ -1039,7 +1221,7 @@ window.open(waUrl, "_blank");
 }
 
 function openGeneralChatWhatsApp() {
-const msg = `Hi ZAYA Team, I am browsing your store and have a question regarding an outfit/order.`;
+const msg = `Hi KRUSHIV Team, I am browsing your store and have a question regarding an outfit/order.`;
 const waUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 window.open(waUrl, "_blank");
 }
@@ -1059,4 +1241,5 @@ toast.classList.remove("show");
 document.addEventListener("DOMContentLoaded", () => {
 initStore();
 updateBagDisplay();
+if (window.lucide) window.lucide.createIcons();
 });
