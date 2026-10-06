@@ -89,34 +89,69 @@ const skeletonHtml = Array(6).fill(0).map(() => `
 grid.innerHTML = skeletonHtml;
 }
 
+let heroBannerImages = [];
+let heroBannerTimer = null;
+let currentHeroBannerIndex = 0;
+let topBarMessages = [];
+let currentTopBarIndex = 0;
+let topBarCrossfadeTimer = null;
+
 async function loadStoreSettings() {
 try {
 const { data } = await supabaseClient
 .from("store_settings")
 .select("*");
 
-let topText = "";
+let topText = "Festive Pret Collection. Easy Doorstep Exchange. Use Code FESTIVE20 for 20% Off";
 let countdownEnd = null;
 
 if (data) {
 data.forEach(item => {
-if (item.key === "top_bar_text") topText = item.value;
+if (item.key === "top_bar_text" && item.value) topText = item.value;
 if (item.key === "countdown_end") countdownEnd = item.value;
+if (item.key === "hero_banners") {
+try { heroBannerImages = JSON.parse(item.value || "[]"); } catch(e) {}
+}
 if (item.key === "blocked_cod_pincodes") {
 try { blockedCodPincodes = JSON.parse(item.value || "[]"); } catch(e) {}
 }
 });
 }
 
-const bar = document.querySelector(".top-bar");
-if (bar && topText) {
-bar.innerHTML = `<span id="topBarMainText">${topText}</span> <span id="topBarTimerBadge" style="margin-left: 8px; background: #A86B58; padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-block;"></span>`;
-if (countdownEnd) {
-startCountdownTimer(countdownEnd);
-}
-}
+setupTopBarCrossfade(topText);
+if (countdownEnd) startCountdownTimer(countdownEnd);
+renderHeroBannerCarousel();
 } catch (e) {
-console.warn("Using default top bar settings", e);
+console.warn("Using default settings", e);
+}
+}
+
+// TOP BANNER CROSSFADE ON FULL STOPS
+function setupTopBarCrossfade(rawText) {
+const bar = document.querySelector(".top-bar");
+if (!bar) return;
+
+let parts = rawText.split(/[.]+/).map(p => p.trim()).filter(p => p.length > 0);
+if (parts.length <= 1) {
+parts = rawText.split(/[•]+/).map(p => p.trim()).filter(p => p.length > 0);
+}
+topBarMessages = parts.length > 0 ? parts : [rawText];
+currentTopBarIndex = 0;
+
+bar.innerHTML = '<span class="top-bar-crossfade-text" id="topBarTextEl">' + topBarMessages[0] + '</span><span id="topBarTimerBadge" style="margin-left:8px; background:#A86B58; padding:2px 7px; border-radius:4px; font-weight:700; display:inline-block;"></span>';
+
+if (topBarCrossfadeTimer) clearInterval(topBarCrossfadeTimer);
+if (topBarMessages.length > 1) {
+topBarCrossfadeTimer = setInterval(() => {
+const textEl = document.getElementById("topBarTextEl");
+if (!textEl) return;
+textEl.classList.add("fade-out");
+setTimeout(() => {
+currentTopBarIndex = (currentTopBarIndex + 1) % topBarMessages.length;
+textEl.innerHTML = topBarMessages[currentTopBarIndex];
+textEl.classList.remove("fade-out");
+}, 500);
+}, 4500);
 }
 }
 
@@ -147,14 +182,94 @@ const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
 const pad = n => String(n).padStart(2, '0');
 if (days > 0) {
-badge.textContent = `⏳ Ends in ${days}d ${pad(hours)}h ${pad(mins)}m`;
+badge.textContent = "⏳ Ends in " + days + "d " + pad(hours) + "h " + pad(mins) + "m";
 } else {
-badge.textContent = `⚡ Ends in ${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+badge.textContent = "⚡ Ends in " + pad(hours) + ":" + pad(mins) + ":" + pad(secs);
 }
 }
 
 update();
 countdownTimerInterval = setInterval(update, 1000);
+}
+
+// -------------------------------------------------------------
+// A1. EDGE-TO-EDGE HERO BANNER CAROUSEL (TOUCHES BOTH BORDERS)
+// -------------------------------------------------------------
+function renderHeroBannerCarousel() {
+const container = document.getElementById("featuredCarouselContainer");
+if (!container) return;
+
+if (heroBannerTimer) clearInterval(heroBannerTimer);
+
+// If no banner links set in admin, leave completely blank as requested
+if (!heroBannerImages || heroBannerImages.length === 0) {
+container.innerHTML = "";
+return;
+}
+
+currentHeroBannerIndex = 0;
+
+let dotsHtml = "";
+if (heroBannerImages.length > 1) {
+dotsHtml = '<div class="hero-edge-dots" id="heroEdgeDots">' +
+heroBannerImages.map((_, i) => '<span class="h-dot ' + (i === 0 ? 'active' : '') + '" onclick="event.stopPropagation(); setHeroBannerIndex(' + i + ')"></span>').join("") +
+'</div>';
+}
+
+container.innerHTML = '<div class="hero-edge-wrap fade-up-init">' +
+'<div class="hero-edge-slide-box" id="heroEdgeBox" onclick="handleHeroBannerClick()" style="background-image: url(\'' + heroBannerImages[0] + '\');">' +
+'<div class="hero-edge-scrim"></div>' +
+'<div class="hero-explore-pill-wrap">' +
+'<button class="btn-hero-explore-pill" onclick="event.stopPropagation(); scrollSmoothToProducts()">' +
+'<span>Explore Collection</span>' +
+'<i data-lucide="arrow-down" style="width:14px; height:14px;"></i>' +
+'</button>' +
+'</div>' +
+dotsHtml +
+'</div>' +
+'</div>';
+
+if (window.lucide) window.lucide.createIcons();
+
+if (heroBannerImages.length > 1) {
+heroBannerTimer = setInterval(() => {
+setHeroBannerIndex((currentHeroBannerIndex + 1) % heroBannerImages.length);
+}, 4500);
+}
+}
+
+function handleHeroBannerClick() {
+if (currentHeroBannerIndex === 0) {
+scrollSmoothToProducts();
+} else {
+setHeroBannerIndex((currentHeroBannerIndex + 1) % heroBannerImages.length);
+}
+}
+
+function setHeroBannerIndex(index) {
+if (!heroBannerImages || heroBannerImages.length <= 1) return;
+currentHeroBannerIndex = index;
+const box = document.getElementById("heroEdgeBox");
+const dots = document.querySelectorAll("#heroEdgeDots .h-dot");
+
+if (box) {
+box.style.opacity = "0.2";
+setTimeout(() => {
+box.style.backgroundImage = "url('" + heroBannerImages[currentHeroBannerIndex] + "')";
+box.style.opacity = "1";
+}, 250);
+}
+
+dots.forEach((d, i) => {
+d.classList.toggle("active", i === currentHeroBannerIndex);
+});
+}
+
+function scrollSmoothToProducts() {
+const target = document.querySelector(".cat-scroll") || document.getElementById("productGrid");
+if (target) {
+target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 }
 
 async function loadCouponsFromDb() {
@@ -225,14 +340,12 @@ reviews: p.reviews && p.reviews !== "0" ? p.reviews : String(detReviews),
 bought_this_month: p.bought_this_month || `${detSold}+ sold this month`,
 stock_qty: (p.stock_qty !== undefined && p.stock_qty !== null) ? Number(p.stock_qty) : 10,
 sizes_stock: sizesStock,
-is_featured: p.is_featured === true,
 images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
 colors: Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors || '[]'),
 specs: Array.isArray(p.specs) ? p.specs : JSON.parse(p.specs || '[]')
 };
 });
 
-renderFeaturedCarousel();
 renderCatalog();
 handleUrlRouting();
 } catch (err) {
@@ -248,102 +361,6 @@ grid.innerHTML = `
 `;
 }
 }
-}
-
-// -------------------------------------------------------------
-// A1. FEATURED PRODUCT CAROUSEL (REPLACES HERO CARD)
-// -------------------------------------------------------------
-function renderFeaturedCarousel() {
-const container = document.getElementById("featuredCarouselContainer");
-if (!container) return;
-
-featuredProductsList = products.filter(p => p.is_featured);
-if (featuredProductsList.length === 0) {
-featuredProductsList = products.slice(0, 4);
-}
-
-if (featuredProductsList.length === 0) {
-container.innerHTML = "";
-return;
-}
-
-currentFeaturedIndex = 0;
-if (featuredAutoTimer) clearInterval(featuredAutoTimer);
-
-container.innerHTML = `
-<div class="featured-carousel-wrap fade-up-init">
-<!-- Arrows -->
-<button class="featured-nav-btn featured-prev" onclick="moveFeaturedSlide(-1)" aria-label="Previous Featured">
-<i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
-</button>
-<button class="featured-nav-btn featured-next" onclick="moveFeaturedSlide(1)" aria-label="Next Featured">
-<i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
-</button>
-
-<!-- Slides Track -->
-<div class="featured-track" id="featuredTrack">
-${featuredProductsList.map(item => {
-const coverImg = item.images[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80';
-const tagText = item.tag || "Couture Highlight";
-return `
-<div class="featured-slide" style="background-image: url('${coverImg}');" onclick="showProductDetails('${item.id}')">
-<div class="featured-scrim"></div>
-<div class="featured-content">
-<span class="featured-tag">${tagText}</span>
-<h2 class="featured-title">${item.title}</h2>
-<div class="featured-meta">
-<span class="featured-price">${CURRENCY}${item.price.toLocaleString('en-IN')}</span>
-${item.mrp > item.price ? `<span class="featured-mrp">${CURRENCY}${item.mrp.toLocaleString('en-IN')}</span>` : ''}
-<span style="color:#25D366; font-size:0.78rem; font-weight:700;">★ ${item.rating} • ${item.bought_this_month}</span>
-</div>
-<div>
-<button class="btn-featured-shop" onclick="event.stopPropagation(); showProductDetails('${item.id}')">
-<span>Explore Piece</span>
-<i data-lucide="arrow-right" style="width: 15px; height: 15px;"></i>
-</button>
-</div>
-</div>
-</div>
-`;
-}).join("")}
-</div>
-
-<!-- Dash Pagination Bars -->
-<div class="featured-pagination-bars" id="featuredPaginationBars">
-${featuredProductsList.map((_, i) => `<span class="f-bar ${i === 0 ? 'active' : ''}" onclick="goToFeaturedSlide(${i})"></span>`).join("")}
-</div>
-</div>
-`;
-
-if (window.lucide) window.lucide.createIcons();
-
-if (featuredProductsList.length > 1) {
-featuredAutoTimer = setInterval(() => {
-moveFeaturedSlide(1);
-}, 5000);
-}
-}
-
-function moveFeaturedSlide(direction) {
-if (featuredProductsList.length <= 1) return;
-currentFeaturedIndex = (currentFeaturedIndex + direction + featuredProductsList.length) % featuredProductsList.length;
-updateFeaturedSlidePosition();
-}
-
-function goToFeaturedSlide(index) {
-currentFeaturedIndex = index;
-updateFeaturedSlidePosition();
-}
-
-function updateFeaturedSlidePosition() {
-const track = document.getElementById("featuredTrack");
-const bars = document.querySelectorAll("#featuredPaginationBars .f-bar");
-if (track) {
-track.style.transform = `translateX(-${currentFeaturedIndex * 100}%)`;
-}
-bars.forEach((bar, idx) => {
-bar.classList.toggle("active", idx === currentFeaturedIndex);
-});
 }
 
 // -------------------------------------------------------------
@@ -455,7 +472,7 @@ ${item.images.map((_, i) => `<span class="c-dot ${i === 0 ? 'active' : ''}"></sp
 </div>
 
 <div class="prod-info">
-<!-- A4: INLINE GREEN RATING & SOLD THIS MONTH -->
+<!-- INLINE GREEN RATING & SOLD THIS MONTH -->
 <div class="rating-sold-inline">
 <span class="rating-badge-green">
 <span>★</span>
@@ -577,7 +594,6 @@ offElem.style.display = "inline-block";
 offElem.style.display = "none";
 }
 
-// B5: 90% / 10% PEEK SLIDER WITH CLICKABLE DOTS
 const peekSlider = document.getElementById("pdpPeekSlider");
 const dotsContainer = document.getElementById("pdpSliderDots");
 const displayImages = item.images.length > 0 ? item.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=700&h=933&q=80'];
@@ -620,7 +636,6 @@ onclick="pickPdpColor('${c.name}', this)">
 colorGroup.parentElement.style.display = "none";
 }
 
-// Size Selector with stock strike-through
 renderSizeSelectors(item);
 
 // Specs
@@ -644,7 +659,6 @@ renderSimilarProducts(item);
 
 updatePdpActionButtons(item);
 
-// View switch & Body Class for A3 (Chat Button Position)
 document.getElementById("catalogView").classList.remove("active");
 document.getElementById("pdpView").classList.add("active");
 document.body.classList.add("pdp-active");
@@ -798,7 +812,6 @@ grid.innerHTML = similar.map(p => `
 `).join("");
 }
 
-// A3. RESET CHAT BUTTON POSITION ON RETURN TO HOME
 function openHomeView() {
 document.getElementById("pdpView").classList.remove("active");
 document.getElementById("catalogView").classList.add("active");
@@ -1243,3 +1256,4 @@ initStore();
 updateBagDisplay();
 if (window.lucide) window.lucide.createIcons();
 });
+
