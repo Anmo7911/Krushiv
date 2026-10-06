@@ -65,7 +65,7 @@ opacity: 1;
 transform: translateY(0);
 }
 
-/* TOP OFFER BANNER */
+/* TOP OFFER BANNER WITH CROSSFADE */
 .top-bar {
 background: var(--noir);
 color: #fff;
@@ -74,13 +74,28 @@ text-transform: uppercase;
 letter-spacing: 0.08em;
 text-align: center;
 padding: 8px 12px;
-white-space: nowrap;
 overflow: hidden;
-text-overflow: ellipsis;
-display: block;
+display: flex;
+justify-content: center;
+align-items: center;
 width: 100%;
+min-height: 36px;
+position: relative;
 }
 .top-bar strong { color: #E0B2A3; }
+
+.top-bar-crossfade-text {
+transition: opacity 0.5s ease;
+white-space: nowrap;
+text-overflow: ellipsis;
+overflow: hidden;
+display: inline-flex;
+align-items: center;
+gap: 8px;
+}
+.top-bar-crossfade-text.fade-out {
+opacity: 0;
+}
 
 /* STICKY HEADER */
 .header {
@@ -149,162 +164,86 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 .view-container.active { display: block; }
 
 /* -------------------------------------------------------------
-A1. PROFESSIONAL FEATURED PRODUCT CAROUSEL
+A1. EDGE-TO-EDGE LUXURY HERO CAROUSEL (TOUCHES BOTH BORDERS)
 -------------------------------------------------------------- */
-.featured-carousel-wrap {
-margin: 14px 14px 22px;
+.hero-edge-wrap {
+width: 100%;
+margin: 0;
+padding: 0;
 position: relative;
-border-radius: var(--radius-md);
 overflow: hidden;
-box-shadow: 0 8px 28px rgba(0,0,0,0.12);
 background: #181615;
 }
 
-.featured-track {
-display: flex;
-width: 100%;
-transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-will-change: transform;
-}
-
-.featured-slide {
-flex: 0 0 100%;
+.hero-edge-slide-box {
 width: 100%;
 position: relative;
-min-height: 360px;
-display: flex;
-align-items: flex-end;
+height: clamp(420px, 68vh, 560px);
 background-size: cover;
-background-position: center top;
+background-position: center center;
 cursor: pointer;
+transition: opacity 0.8s ease-in-out;
 }
 
-@media (min-width: 768px) {
-.featured-slide {
-min-height: 440px;
-}
-}
-
-.featured-scrim {
+.hero-edge-scrim {
 position: absolute;
 inset: 0;
-background: linear-gradient(180deg, rgba(20,18,17,0.15) 0%, rgba(20,18,17,0.88) 85%);
-z-index: 1;
+background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 50%, rgba(18,16,15,0.7) 100%);
+pointer-events: none;
 }
 
-.featured-content {
-position: relative;
-z-index: 2;
-padding: 24px 20px 28px;
-width: 100%;
-color: #fff;
+.hero-explore-pill-wrap {
+position: absolute;
+bottom: 24px;
+left: 50%;
+transform: translateX(-50%);
+z-index: 10;
 }
 
-.featured-tag {
-display: inline-block;
-background: rgba(224, 178, 163, 0.25);
-color: #E0B2A3;
-border: 1px solid rgba(224, 178, 163, 0.45);
-font-size: 0.68rem;
-letter-spacing: 0.16em;
-text-transform: uppercase;
-font-weight: 700;
-padding: 3px 10px;
-border-radius: var(--radius-full);
-margin-bottom: 8px;
-}
-
-.featured-title {
-font-family: var(--font-serif);
-font-size: 1.85rem;
-font-weight: 500;
-line-height: 1.22;
-margin-bottom: 6px;
-}
-@media (min-width: 768px) {
-.featured-title { font-size: 2.3rem; }
-}
-
-.featured-meta {
-display: flex;
-align-items: center;
-gap: 12px;
-margin-bottom: 14px;
-flex-wrap: wrap;
-}
-
-.featured-price {
-font-size: 1.25rem;
-font-weight: 700;
-color: #fff;
-}
-.featured-mrp {
-font-size: 0.88rem;
-color: #A8A29D;
-text-decoration: line-through;
-}
-
-.btn-featured-shop {
-background: #FFFFFF;
-color: var(--noir);
-padding: 10px 22px;
+.btn-hero-explore-pill {
+background: rgba(24, 22, 21, 0.85);
+backdrop-filter: blur(8px);
+color: #FFFFFF;
+border: 1px solid rgba(255, 255, 255, 0.35);
+padding: 10px 28px;
 border-radius: var(--radius-sm);
 font-size: 0.82rem;
 font-weight: 700;
+letter-spacing: 0.14em;
+text-transform: uppercase;
 display: inline-flex;
 align-items: center;
 gap: 8px;
-box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-transition: all 0.2s ease;
+box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+cursor: pointer;
+transition: all 0.25s ease;
 }
-.btn-featured-shop:hover {
-background: #F0ECE6;
+.btn-hero-explore-pill:hover {
+background: #FFFFFF;
+color: var(--noir);
+border-color: #FFFFFF;
 transform: translateY(-2px);
 }
 
-.featured-nav-btn {
+.hero-edge-dots {
 position: absolute;
-top: 50%;
-transform: translateY(-50%);
-width: 40px;
-height: 40px;
-border-radius: 50%;
-background: rgba(255, 255, 255, 0.25);
-backdrop-filter: blur(8px);
-color: #fff;
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 5;
-transition: all 0.2s ease;
-border: 1px solid rgba(255,255,255,0.3);
-}
-.featured-nav-btn:hover {
-background: rgba(255, 255, 255, 0.9);
-color: var(--noir);
-}
-.featured-prev { left: 12px; }
-.featured-next { right: 12px; }
-
-.featured-pagination-bars {
-position: absolute;
-bottom: 12px;
+bottom: 8px;
 left: 50%;
 transform: translateX(-50%);
 display: flex;
 gap: 6px;
-z-index: 5;
+z-index: 10;
 }
-.f-bar {
-width: 22px;
-height: 3px;
-background: rgba(255, 255, 255, 0.4);
-border-radius: 2px;
-cursor: pointer;
+.h-dot {
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.45);
 transition: all 0.3s ease;
 }
-.f-bar.active {
-width: 38px;
+.h-dot.active {
+width: 18px;
+border-radius: 3px;
 background: #FFFFFF;
 }
 
@@ -353,7 +292,7 @@ gap: 8px;
 .cat-scroll {
 display: flex;
 gap: 8px;
-padding: 0 16px 16px;
+padding: 16px 16px 16px;
 overflow-x: auto;
 scrollbar-width: none;
 }
@@ -510,9 +449,7 @@ flex-direction: column;
 flex-grow: 1;
 }
 
-/* -------------------------------------------------------------
-A4. INLINE PRODUCT CARD RATING & SOLD STRIP
--------------------------------------------------------------- */
+/* INLINE GREEN RATING & SOLD STRIP */
 .rating-sold-inline {
 display: flex;
 align-items: center;
@@ -652,7 +589,6 @@ align-items: flex-start;
 .pdp-info-pane { width: 52%; }
 }
 
-/* VERTICAL 90% / 10% PEEK SLIDER */
 .pdp-peek-slider-wrapper {
 position: relative;
 width: 100%;
@@ -698,7 +634,6 @@ object-position: top center;
 display: block;
 }
 
-/* B5. CLICKABLE DOTS FOR PDP SLIDER */
 .pdp-slider-dots {
 display: flex;
 justify-content: center;
@@ -798,9 +733,7 @@ color: #fff;
 border-color: var(--noir);
 }
 
-/* -------------------------------------------------------------
-B6. RESPONSIVE BUTTONS: DESKTOP INLINE VS MOBILE STICKY
--------------------------------------------------------------- */
+/* RESPONSIVE BUTTONS: DESKTOP INLINE VS MOBILE STICKY */
 .pdp-desktop-actions-row {
 display: none;
 }
@@ -1676,9 +1609,9 @@ background: var(--wa-dark);
 transform: translateY(-2px);
 }
 
-/* On Mobile PDP, elevated above the sticky bar */
+/* On Mobile PDP, elevated above the sticky bar (No overlap) */
 body.pdp-active .floating-chat-btn {
-bottom: 84px;
+bottom: 110px;
 }
 
 @media (min-width: 768px) {
