@@ -221,8 +221,8 @@ container.innerHTML = '<div class="hero-edge-wrap fade-up-init">' +
 '<div class="hero-edge-scrim"></div>' +
 '<div class="hero-explore-pill-wrap">' +
 '<button class="btn-hero-explore-pill" onclick="event.stopPropagation(); scrollSmoothToProducts()">' +
-'<span>Explore Collection</span>' +
-'<i data-lucide="arrow-down" style="width:14px; height:14px;"></i>' +
+'<span>Explore</span>' +
+'<i data-lucide="arrow-down" style="width:12px; height:12px;"></i>' +
 '</button>' +
 '</div>' +
 dotsHtml +
