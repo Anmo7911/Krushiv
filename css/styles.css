@@ -176,13 +176,13 @@ background: #181615;
 }
 
 .hero-edge-slide-box {
-width: 100%;
-position: relative;
-height: clamp(420px, 68vh, 560px);
-background-size: cover;
-background-position: center center;
-cursor: pointer;
-transition: opacity 0.8s ease-in-out;
+  width: 100%;
+  position: relative;
+  height: clamp(340px, 52vh, 460px);
+  background-size: cover;
+  background-position: center center;
+  cursor: pointer;
+  transition: opacity 0.8s ease-in-out;
 }
 
 .hero-edge-scrim {
