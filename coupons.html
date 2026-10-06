@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ZAYA Atelier | Coupons & Offers Manager</title>
+<title>KRUSHIV Atelier | Coupons & Offers Manager</title>
 
 <!-- Supabase JS Client via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -83,13 +83,13 @@ tr:hover { background: #FCFAF7; }
 <div class="card">
 <h2 class="card-title">1. Live Store Announcement Banner & Countdown Timer</h2>
 <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
-Control the announcement bar text and the live urgency countdown timer shown at the very top of your storefront.
+Control the announcement bar text (crossfades smoothly on full stops <code>.</code>) and the live urgency countdown timer shown at the very top of your storefront.
 </p>
 
 <div class="form-grid">
 <div class="form-group full">
-<label class="label">Top Announcement Banner Text</label>
-<input type="text" id="topBarInput" class="input" placeholder="Festive Pret Collection • Easy Doorstep Exchange • Use Code FESTIVE20 for 20% Off" />
+<label class="label">Top Announcement Banner Text (Separate sentences with full stops)</label>
+<input type="text" id="topBarInput" class="input" placeholder="Festive Pret Collection. Easy Doorstep Exchange. Use Code FESTIVE20 for 20% Off." />
 </div>
 
 <div class="form-group">
@@ -104,9 +104,24 @@ Control the announcement bar text and the live urgency countdown timer shown at 
 </div>
 </div>
 
-<!-- 2. PINCODE / COD SERVICEABILITY CHECKER SETTINGS -->
+<!-- 2. EDGE-TO-EDGE HERO BANNER IMAGES (TOP OF STOREFRONT) -->
 <div class="card">
-<h2 class="card-title">2. COD Serviceability & Blocked Pincodes</h2>
+<h2 class="card-title">2. Edge-to-Edge Hero Banner Images (Home Top)</h2>
+<p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
+Paste direct image URLs (one per line) for the top full-bleed home carousel. If left empty, it will remain blank. Clicking the first slide smoothly slides down to the product catalog!
+</p>
+<div class="form-group full">
+<label class="label">Hero Banner Image URLs (One link per line)</label>
+<textarea id="heroBannersInput" class="input" rows="3" placeholder="https://images.unsplash.com/...&#10;https://images.unsplash.com/..."></textarea>
+<div style="margin-top: 8px;">
+<button class="btn btn-dark" onclick="saveHeroBanners()">Save Hero Banners</button>
+</div>
+</div>
+</div>
+
+<!-- 3. PINCODE / COD SERVICEABILITY CHECKER SETTINGS -->
+<div class="card">
+<h2 class="card-title">3. COD Serviceability & Blocked Pincodes</h2>
 <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">
 Enter any pincodes (comma or line-separated) where you do NOT want Cash on Delivery allowed (orders to these pincodes will be restricted to prepaid UPI only).
 </p>
@@ -119,9 +134,9 @@ Enter any pincodes (comma or line-separated) where you do NOT want Cash on Deliv
 </div>
 </div>
 
-<!-- 3. COUPON CREATION FORM -->
+<!-- 4. COUPON CREATION FORM -->
 <div class="card">
-<h2 class="card-title" id="couponFormTitle">3. Add or Edit Coupon Code</h2>
+<h2 class="card-title" id="couponFormTitle">4. Add or Edit Coupon Code</h2>
 <form id="couponForm" onsubmit="handleSaveCoupon(event)">
 <div class="form-grid">
 <div class="form-group">
@@ -161,7 +176,7 @@ Enter any pincodes (comma or line-separated) where you do NOT want Cash on Deliv
 </form>
 </div>
 
-<!-- 4. EXISTING COUPONS TABLE -->
+<!-- 5. EXISTING COUPONS TABLE -->
 <div class="card">
 <h2 class="card-title">Coupons in Database (<span id="couponCount">0</span>)</h2>
 <div class="table-wrap">
@@ -226,6 +241,11 @@ if (item.key === "top_bar_text") {
 document.getElementById("topBarInput").value = item.value;
 } else if (item.key === "countdown_end") {
 document.getElementById("countdownInput").value = item.value;
+} else if (item.key === "hero_banners") {
+try {
+const list = JSON.parse(item.value || "[]");
+document.getElementById("heroBannersInput").value = list.join("\n");
+} catch(e) {}
 } else if (item.key === "blocked_cod_pincodes") {
 try {
 const list = JSON.parse(item.value || "[]");
@@ -251,6 +271,21 @@ await supabaseClient.from("store_settings").upsert([
 ]);
 
 showToast("Banner & Countdown timer updated live!");
+}
+
+async function saveHeroBanners() {
+const raw = document.getElementById("heroBannersInput").value;
+const list = raw.split(/[\n,]/).map(u => u.trim()).filter(u => u.length > 0);
+
+const { error } = await supabaseClient
+.from("store_settings")
+.upsert({ key: "hero_banners", value: JSON.stringify(list) });
+
+if (error) {
+alert("Error saving hero banners: " + error.message);
+} else {
+showToast("Hero banners saved live (" + list.length + " images)!");
+}
 }
 
 async function saveBlockedPincodes() {
