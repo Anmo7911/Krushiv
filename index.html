@@ -38,12 +38,10 @@ style="height: 38px; width: auto; object-fit: contain; display: block;"
 <span class="bag-badge-pill" id="headerBagCount">0</span>
 </button>
 
-
- <!-- 2. Profile Icon -->
-      <button class="header-icon-btn" onclick="toggleAccountDrawer(true)" aria-label="My Account" id="headerProfileBtn" style="position: relative;">
-        <i data-lucide="user" style="width: 22px; height: 22px;"></i>
-        <span class="auth-active-dot" id="headerAuthDot" style="display:none;"></span>
-      </button>
+<!-- 2. Profile Icon -->
+<button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="User Profile">
+<i data-lucide="user" style="width: 22px; height: 22px;"></i>
+</button>
 
 <!-- 3. Hamburger Menu -->
 <button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="Open Mobile Menu">
@@ -70,13 +68,13 @@ style="height: 32px; width: auto; object-fit: contain;"
 
 <div class="sidebar-content">
 <!-- Profile Card -->
-<div class="sidebar-profile-card" onclick="toggleSidebar(false); toggleAccountDrawer(true);" style="cursor: pointer;">
-        <div class="sidebar-avatar" id="sidebarAvatar">K</div>
-        <div>
-          <div class="sidebar-user-name" id="sidebarUserName">Welcome to KRUSHIV</div>
-          <div class="sidebar-user-action" id="sidebarUserAction">Sign In / My Account →</div>
-        </div>
-      </div>
+<div class="sidebar-profile-card">
+<div class="sidebar-avatar">K</div>
+<div>
+<div class="sidebar-user-name">Welcome to KRUSHIV</div>
+<div class="sidebar-user-action" onclick="openTrackModal()">Track My Orders →</div>
+</div>
+</div>
 
 <!-- Categories & Collections -->
 <div>
@@ -523,141 +521,6 @@ Order on WhatsApp
 <span>Chat with Us</span>
 </a>
 
-   <!-- 5. ACCOUNT / SIGN IN & SIGN UP DRAWER -->
-  <div class="account-overlay" id="accountOverlay" onclick="toggleAccountDrawer(false)"></div>
-  <aside class="account-drawer" id="accountDrawer">
-    <div class="account-drawer-header">
-      <div class="account-drawer-title" id="accountDrawerTitle">My Account</div>
-      <button class="header-icon-btn" onclick="toggleAccountDrawer(false)" aria-label="Close Account Drawer">
-        <i data-lucide="x" style="width: 22px; height: 22px;"></i>
-      </button>
-    </div>
-
-    <div class="account-drawer-body">
-      <!-- A. LOGGED OUT: SIGN IN / SIGN UP TABS & FORM -->
-      <div id="authLoggedOutView">
-        <div class="auth-nav-tabs">
-          <button type="button" class="auth-tab-btn active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-          <button type="button" class="auth-tab-btn" id="tabSignUp" onclick="switchAuthTab('signup')">Sign Up</button>
-        </div>
-
-        <form id="authCustomerForm" onsubmit="handleCustomerAuthSubmit(event)">
-          <div class="auth-form-field" id="fieldFullName" style="display: none;">
-            <label class="auth-label">Full Name *</label>
-            <input type="text" id="authName" class="auth-input" placeholder="e.g. Priya Sharma" autocomplete="name" />
-          </div>
-
-          <div class="auth-form-field">
-            <label class="auth-label">Email or Mobile Number *</label>
-            <input type="text" id="authIdentifier" class="auth-input" placeholder="e.g. 9876543210 or name@gmail.com" required autocomplete="username" />
-          </div>
-
-          <div class="auth-form-field">
-            <label class="auth-label">Password *</label>
-            <input type="password" id="authPassword" class="auth-input" placeholder="At least 6 characters" required autocomplete="current-password" />
-          </div>
-
-          <div id="authErrorAlert" class="auth-error-alert" style="display: none;"></div>
-
-          <button type="submit" class="btn-auth-submit" id="authSubmitBtn">
-            Sign In to KRUSHIV
-          </button>
-        </form>
-
-        <div class="auth-toggle-note" id="authToggleNote">
-          Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signup')">Create one now</a>
-        </div>
-
-        <div class="auth-perks-box">
-          <div class="auth-perk-item">
-            <i data-lucide="shopping-bag" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>Bag automatically saves across your phone & laptop</span>
-          </div>
-          <div class="auth-perk-item">
-            <i data-lucide="map-pin" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>1-click WhatsApp checkout with saved delivery address</span>
-          </div>
-          <div class="auth-perk-item">
-            <i data-lucide="package" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>View your previous orders & tracking anytime</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- B. LOGGED IN: CUSTOMER PROFILE & ORDER HISTORY -->
-      <div id="authLoggedInView" style="display: none;">
-        <!-- User Badge -->
-        <div class="account-profile-card">
-          <div class="account-avatar" id="accUserAvatar">K</div>
-          <div class="account-profile-info">
-            <div class="account-name" id="accUserName">Customer</div>
-            <div class="account-identifier" id="accUserIdentifier">Loading...</div>
-          </div>
-        </div>
-
-        <!-- Section Navigation -->
-        <div class="acc-subtabs">
-          <button type="button" class="acc-subtab active" id="subtabAddress" onclick="switchAccSubtab('address')">
-            <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
-            <span>Saved Address</span>
-          </button>
-          <button type="button" class="acc-subtab" id="subtabOrders" onclick="switchAccSubtab('orders')">
-            <i data-lucide="package" style="width:14px; height:14px;"></i>
-            <span>My Orders</span>
-          </button>
-        </div>
-
-        <!-- 1. Saved Address Tab -->
-        <div id="accAddressPanel" class="acc-panel">
-          <p style="font-size:0.78rem; color:var(--muted); margin-bottom:12px;">
-            Saved delivery details will automatically pre-fill whenever you checkout via WhatsApp.
-          </p>
-          <form onsubmit="handleSaveCustomerAddress(event)">
-            <div class="auth-form-field">
-              <label class="auth-label">Full Name</label>
-              <input type="text" id="accFullName" class="auth-input" placeholder="Your full name" />
-            </div>
-            <div class="auth-form-field">
-              <label class="auth-label">Phone Number (10 digits)</label>
-              <input type="tel" id="accPhone" class="auth-input" maxlength="10" placeholder="e.g. 9876543210" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" />
-            </div>
-            <div class="auth-form-field">
-              <label class="auth-label">Delivery Address (House/Street/Area)</label>
-              <textarea id="accAddress" class="auth-input" rows="2" placeholder="Complete address for courier delivery"></textarea>
-            </div>
-            <div style="display:flex; gap:10px;">
-              <div class="auth-form-field" style="flex:1;">
-                <label class="auth-label">Landmark</label>
-                <input type="text" id="accLandmark" class="auth-input" placeholder="Near temple, metro..." />
-              </div>
-              <div class="auth-form-field" style="flex:1;">
-                <label class="auth-label">Pincode (6 digits)</label>
-                <input type="text" id="accPincode" class="auth-input" maxlength="6" placeholder="Pincode" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)" />
-              </div>
-            </div>
-            <button type="submit" class="btn-auth-submit" id="btnSaveAddress" style="margin-top:8px;">
-              Save Delivery Details
-            </button>
-          </form>
-        </div>
-
-        <!-- 2. My Orders Tab -->
-        <div id="accOrdersPanel" class="acc-panel" style="display: none;">
-          <div id="customerOrdersList" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
-            <div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.85rem;">
-              Loading orders...
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="btn-customer-logout" onclick="handleCustomerLogout()">
-          <i data-lucide="log-out" style="width:16px; height:16px;"></i>
-          <span>Sign Out</span>
-        </button>
-      </div>
-    </div>
-  </aside>
-  
 <!-- Toast -->
 <div class="toast" id="toastNotice">Item added to your shopping bag!</div>
 
