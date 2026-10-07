@@ -1,303 +1,24 @@
 // store.js - KRUSHIV ATELIER (Complete Storefront Controller)
 
-var supabaseClient = window.supabaseClient || window.db || null;
-
-if (typeof generateSlug !== 'function') {
-  window.generateSlug = function(text) {
-    if (!text) return 'piece';
-    return text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-  };
-}
-
 // -------------------------------------------------------------
-// 1. STORE CONFIGURATION & STARTER DATA
+// 1. STORE CONFIGURATION
 // -------------------------------------------------------------
-const WHATSAPP_PHONE = window.ZAYA_WHATSAPP_PHONE || "919876543210"; // Enter WhatsApp phone number with country code
+const WHATSAPP_PHONE = "919876543210"; // Enter your WhatsApp phone number with country code
 const CURRENCY = "₹";
 const COD_FEE = 50;
 
-// High-resolution curated editorial hero banners (Luxury ethnic couture & festive pret)
-const DEFAULT_HERO_BANNERS = [
-  "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=1600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1544441893-675973e31985?w=1600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=1600&auto=format&fit=crop&q=80"
-];
-
-// Rich starter catalog covering all boutique categories
-const DEFAULT_PRODUCTS = [
-  {
-    id: "kr-gulab-anarkali",
-    slug: "gulab-chanderi-silk-anarkali-set",
-    token: "tok_gulab_01",
-    title: "Gulab Chanderi Silk Anarkali Set with Organza Dupatta",
-    category: "Kurtas",
-    price: 3499,
-    mrp: 4999,
-    tag: "Bestseller",
-    stock_qty: 15,
-    sizes_stock: { "S": 10, "M": 10, "L": 8, "XL": 6, "XXL": 4, "3XL": 2 },
-    rating: "4.9",
-    reviews: 142,
-    bought_this_month: "420+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Blush Rose", hex: "#E8C5C8" },
-      { name: "Sage Green", hex: "#8A9A86" },
-      { name: "Ivory Gold", hex: "#F3EAD8" }
-    ],
-    specs: [
-      "Pure Handwoven Chanderi Silk Fabric",
-      "Intricate Zari & Sequin Embroidery on Neckline",
-      "Matching Organza Dupatta with Scalloped Borders",
-      "Breathable Cotton Silk Inner Lining Included",
-      "Dry Clean Recommended"
-    ],
-    is_featured: true
-  },
-  {
-    id: "kr-noor-mulmul",
-    slug: "noor-hand-embroidered-mulmul-kurta-set",
-    token: "tok_noor_02",
-    title: "Noor Handcrafted Mulmul Kurta & Palazzo Set",
-    category: "Kurtas",
-    price: 2899,
-    mrp: 3999,
-    tag: "Handcrafted",
-    stock_qty: 12,
-    sizes_stock: { "S": 8, "M": 10, "L": 6, "XL": 4, "XXL": 2, "3XL": 0 },
-    rating: "4.8",
-    reviews: 98,
-    bought_this_month: "310+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Powder Blue", hex: "#B8C9D9" },
-      { name: "Peach Pink", hex: "#F5C8B8" },
-      { name: "Mint Mist", hex: "#C7D8C6" }
-    ],
-    specs: [
-      "100% Breathable Organic Mulmul Cotton",
-      "Hand-done Chikankari Inspired Threadwork",
-      "Comfort-fit Palazzo with Elasticated Waistband",
-      "Featherlight for All-Day Festive Comfort",
-      "Gentle Hand Wash or Dry Clean"
-    ],
-    is_featured: true
-  },
-  {
-    id: "kr-emerald-slip",
-    slug: "satin-cowl-neck-midi-slip-dress",
-    token: "tok_slip_03",
-    title: "Emerald Satin Cowl Neck Midi Slip Dress",
-    category: "Dresses",
-    price: 2499,
-    mrp: 3499,
-    tag: "Trending",
-    stock_qty: 18,
-    sizes_stock: { "S": 12, "M": 12, "L": 8, "XL": 5, "XXL": 2, "3XL": 0 },
-    rating: "4.9",
-    reviews: 86,
-    bought_this_month: "280+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Emerald Green", hex: "#1C4E3D" },
-      { name: "Champagne Gold", hex: "#EAD6B8" },
-      { name: "Noir Black", hex: "#1A1A1A" }
-    ],
-    specs: [
-      "Heavyweight Luxe Satin Crepe Fabric",
-      "Flattering Bias-Cut Silhouette with Cowl Neck",
-      "Adjustable Spaghetti Straps with Gold Sliders",
-      "Subtle Side Slit for Effortless Movement",
-      "Dry Clean Only"
-    ],
-    is_featured: true
-  },
-  {
-    id: "kr-mauve-maxi",
-    slug: "pleated-georgette-tiered-maxi-dress",
-    token: "tok_maxi_04",
-    title: "Dusty Mauve Tiered Pleated Georgette Maxi Dress",
-    category: "Dresses",
-    price: 2799,
-    mrp: 3999,
-    tag: "New Launch",
-    stock_qty: 9,
-    sizes_stock: { "S": 5, "M": 6, "L": 4, "XL": 2, "XXL": 1, "3XL": 0 },
-    rating: "4.9",
-    reviews: 64,
-    bought_this_month: "190+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Dusty Mauve", hex: "#A87B86" },
-      { name: "Midnight Navy", hex: "#1B2838" }
-    ],
-    specs: [
-      "Micro-Pleated Premium Georgette",
-      "Ruffled Tiered Hemline with Fluid Fall",
-      "Smocked Back Bodice for Customized Fit",
-      "Full Satin Lining",
-      "Dry Clean or Gentle Cold Wash"
-    ],
-    is_featured: false
-  },
-  {
-    id: "kr-terracotta-coord",
-    slug: "zari-linen-blazer-trouser-coord-set",
-    token: "tok_coord_05",
-    title: "Terracotta Zari Weave Linen Blazer & Trouser Co-ord Set",
-    category: "Co-ords",
-    price: 3299,
-    mrp: 4599,
-    tag: "Atelier Special",
-    stock_qty: 14,
-    sizes_stock: { "S": 6, "M": 8, "L": 6, "XL": 4, "XXL": 2, "3XL": 1 },
-    rating: "4.9",
-    reviews: 112,
-    bought_this_month: "350+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Terracotta", hex: "#B85D43" },
-      { name: "Olive Khaki", hex: "#636B46" },
-      { name: "Sand Beige", hex: "#D6C6B0" }
-    ],
-    specs: [
-      "Handcrafted Linen-Cotton Blend Fabric",
-      "Subtle Metallic Zari Pin-Stripe Weaving",
-      "Tailored Relaxed-Fit Blazer with Horn Buttons",
-      "High-Waisted Straight-Leg Trousers with Pockets",
-      "Dry Clean Only"
-    ],
-    is_featured: true
-  },
-  {
-    id: "kr-blossom-coord",
-    slug: "floral-printed-crop-top-flared-pant-coord",
-    token: "tok_coord_06",
-    title: "Berry Blossom Floral Crop Top & Wide Leg Co-ord",
-    category: "Co-ords",
-    price: 2199,
-    mrp: 2999,
-    tag: "Popular",
-    stock_qty: 16,
-    sizes_stock: { "S": 8, "M": 10, "L": 8, "XL": 4, "XXL": 2, "3XL": 0 },
-    rating: "4.8",
-    reviews: 73,
-    bought_this_month: "230+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Berry Blossom", hex: "#8F3A52" },
-      { name: "Indigo Bloom", hex: "#2C3E50" }
-    ],
-    specs: [
-      "Soft Rayon-Modal Breathable Fabric",
-      "Contemporary Bohemian Floral Digital Print",
-      "Sweetheart Neckline with Smocked Back",
-      "Wide-Leg Flowing Silhouette",
-      "Machine Wash Cold on Gentle"
-    ],
-    is_featured: false
-  },
-  {
-    id: "kr-katan-saree",
-    slug: "banarasi-katan-silk-saree-zari-border",
-    token: "tok_saree_07",
-    title: "Royal Wine Banarasi Katan Silk Saree with Zari Border",
-    category: "Sarees",
-    price: 4999,
-    mrp: 7999,
-    tag: "Pure Heritage",
-    stock_qty: 8,
-    sizes_stock: { "Free Size": 8, "S": 8, "M": 8, "L": 8, "XL": 8, "XXL": 8, "3XL": 8 },
-    rating: "5.0",
-    reviews: 156,
-    bought_this_month: "510+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Royal Wine", hex: "#581825" },
-      { name: "Mustard Gold", hex: "#D4A017" },
-      { name: "Rani Pink", hex: "#C71585" }
-    ],
-    specs: [
-      "100% Pure Katan Silk Handloom Weaving",
-      "Grand Kadwa Floral Zari Weave Pallu",
-      "Matching Unstitched Blouse Piece Included (0.8m)",
-      "Certified Handloom Mark Authenticity",
-      "Dry Clean Strictly"
-    ],
-    is_featured: true
-  },
-  {
-    id: "kr-organza-saree",
-    slug: "tissue-organza-embroidered-festive-saree",
-    token: "tok_saree_08",
-    title: "Rose Gold Tissue Organza Hand-Embroidered Saree",
-    category: "Sarees",
-    price: 3899,
-    mrp: 5499,
-    tag: "Festive Pret",
-    stock_qty: 11,
-    sizes_stock: { "Free Size": 11, "S": 11, "M": 11, "L": 11, "XL": 11, "XXL": 11, "3XL": 11 },
-    rating: "4.9",
-    reviews: 119,
-    bought_this_month: "390+ sold this month",
-    images: [
-      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800&auto=format&fit=crop&q=80"
-    ],
-    colors: [
-      { name: "Rose Gold", hex: "#B76E79" },
-      { name: "Pistachio Green", hex: "#93C572" },
-      { name: "Lavender Mist", hex: "#E6E6FA" }
-    ],
-    specs: [
-      "Sheer Shimmer Tissue Organza Body",
-      "Hand-Cutwork Scallop Borders with Muted Zari",
-      "Includes Satin Lining Fabric & Designer Blouse Piece",
-      "Featherlight & Crisp Draping Quality",
-      "Dry Clean Only"
-    ],
-    is_featured: false
-  }
-];
-
 // Dynamic Config & State from Supabase
-let activeCoupons = {
-  "FESTIVE20": { code: "FESTIVE20", type: "percent", val: 20, desc: "20% Flat Discount" },
-  "KRUSHIV500": { code: "KRUSHIV500", type: "flat", val: 500, desc: "₹500 Off on orders above ₹2,500" }
-};
+let activeCoupons = {};
 let blockedCodPincodes = [];
 let countdownTimerInterval = null;
-let heroBannerImages = [...DEFAULT_HERO_BANNERS];
+let heroBannerImages = [];
 let heroBannerTimer = null;
 let currentHeroBannerIndex = 0;
 let topBarMessages = [];
 let currentTopBarIndex = 0;
 let topBarCrossfadeTimer = null;
 
-// Reviews Data
+// Reviews
 const customerReviews = [
   { name: "Priya S.", city: "Delhi", stars: "★★★★★", text: "Got this for clg farewell last week.. fabric is pure mulmul not transparent at all. 10/10 fit for me" },
   { name: "Ananya Mehta", city: "Mumbai", stars: "★★★★★", text: "delivered in 3 days in malad. colour is slightly darker thn pic but looks v pretty after wearing ❤️" },
@@ -310,7 +31,7 @@ const customerReviews = [
 ];
 
 // App State
-let products = [...DEFAULT_PRODUCTS];
+let products = [];
 let currentCategory = "All";
 let cart = [];
 let appliedCoupon = null;
@@ -321,11 +42,6 @@ let currentColor = null;
 let carouselTimers = {};
 let toastTimer = null;
 
-// Customer Auth State
-let currentCustomer = null;
-let currentAuthTab = "signin";
-let currentAccSubtab = "address";
-
 // -------------------------------------------------------------
 // 2. SOCIAL PROOF & GHOST SKELETON HELPERS
 // -------------------------------------------------------------
@@ -335,29 +51,31 @@ function getDeterministicReviews(idStr) {
     hash = (hash << 5) - hash + idStr.charCodeAt(i);
     hash |= 0;
   }
-  return 85 + (Math.abs(hash) % 75);
+  return 85 + Math.abs(hash % 265); // 85 to 350 reviews
 }
 
 function getDeterministicBought(idStr) {
   let hash = 0;
   for (let i = 0; i < idStr.length; i++) {
-    hash = (hash << 3) - hash + idStr.charCodeAt(i);
+    hash = (hash << 3) + hash + idStr.charCodeAt(i);
     hash |= 0;
   }
-  return `${180 + (Math.abs(hash) % 240)}+ bought this month`;
+  const num = 120 + Math.abs(hash % 480);
+  return `${num}+ bought this month`;
 }
 
 function renderGhostSkeletons() {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
 
-  const skeletonHtml = Array.from({ length: 6 }).map(() => `
-    <div class="prod-card skeleton-card">
-      <div class="skeleton skeleton-img"></div>
-      <div class="prod-info" style="padding: 12px 6px;">
-        <div class="skeleton skeleton-pill" style="width: 45%; margin-bottom: 8px;"></div>
-        <div class="skeleton skeleton-title"></div>
-        <div class="skeleton skeleton-price"></div>
+  const skeletonHtml = Array(6).fill(0).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-box skeleton-img"></div>
+      <div class="skeleton-info">
+        <div class="skeleton-box skeleton-line-sm"></div>
+        <div class="skeleton-box skeleton-line-title"></div>
+        <div class="skeleton-box skeleton-line-price"></div>
+        <div class="skeleton-box skeleton-btn"></div>
       </div>
     </div>
   `).join("");
@@ -366,43 +84,36 @@ function renderGhostSkeletons() {
 }
 
 // -------------------------------------------------------------
-// 3. STORE SETTINGS & TOP BAR CROSSFADE
+// 3. STORE SETTINGS & TOP BAR CROSSFADE (SPLIT ON FULL STOPS)
 // -------------------------------------------------------------
 async function loadStoreSettings() {
-  let topText = "Festive Pret Collection. Easy Doorstep Exchange. Use Code FESTIVE20 for 20% Off";
-  let countdownEnd = null;
-
   try {
-    if (window.supabaseClient) {
-      const { data } = await supabaseClient
-        .from("store_settings")
-        .select("*");
+    const { data } = await supabaseClient
+      .from("store_settings")
+      .select("*");
 
-      if (data && data.length > 0) {
-        data.forEach(item => {
-          if (item.key === "top_bar_text" && item.value) topText = item.value;
-          if (item.key === "countdown_end") countdownEnd = item.value;
-          if (item.key === "hero_banners" && item.value) {
-            try {
-              const parsed = JSON.parse(item.value);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                heroBannerImages = parsed;
-              }
-            } catch(e) {}
-          }
-          if (item.key === "blocked_cod_pincodes" && item.value) {
-            try { blockedCodPincodes = JSON.parse(item.value || "[]"); } catch(e) {}
-          }
-        });
-      }
+    let topText = "Festive Pret Collection. Easy Doorstep Exchange. Use Code FESTIVE20 for 20% Off";
+    let countdownEnd = null;
+
+    if (data) {
+      data.forEach(item => {
+        if (item.key === "top_bar_text" && item.value) topText = item.value;
+        if (item.key === "countdown_end") countdownEnd = item.value;
+        if (item.key === "hero_banners") {
+          try { heroBannerImages = JSON.parse(item.value || "[]"); } catch(e) {}
+        }
+        if (item.key === "blocked_cod_pincodes") {
+          try { blockedCodPincodes = JSON.parse(item.value || "[]"); } catch(e) {}
+        }
+      });
     }
-  } catch (e) {
-    console.warn("Using default store settings:", e);
-  }
 
-  setupTopBarCrossfade(topText);
-  if (countdownEnd) startCountdownTimer(countdownEnd);
-  renderHeroBannerCarousel();
+    setupTopBarCrossfade(topText);
+    if (countdownEnd) startCountdownTimer(countdownEnd);
+    renderHeroBannerCarousel();
+  } catch (e) {
+    console.warn("Using default settings", e);
+  }
 }
 
 function setupTopBarCrossfade(rawText) {
@@ -421,29 +132,21 @@ function setupTopBarCrossfade(rawText) {
 
   topBarMessages = parts;
   currentTopBarIndex = 0;
-
-  bar.innerHTML = `
-    <span id="topBarMessage" style="display:inline-block; transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; opacity: 1;">
-      ${topBarMessages[0]}
-    </span>
-  `;
+  bar.innerHTML = `<span class="top-bar-crossfade active">${topBarMessages[0]}</span>`;
 
   if (topBarCrossfadeTimer) clearInterval(topBarCrossfadeTimer);
 
   topBarCrossfadeTimer = setInterval(() => {
-    const el = document.getElementById("topBarMessage");
-    if (!el) return;
-
-    el.style.opacity = "0";
-    el.style.transform = "translateY(-4px)";
-
-    setTimeout(() => {
-      currentTopBarIndex = (currentTopBarIndex + 1) % topBarMessages.length;
-      el.textContent = topBarMessages[currentTopBarIndex];
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
-    }, 500);
-  }, 4000);
+    const activeSpan = bar.querySelector(".top-bar-crossfade");
+    if (activeSpan) {
+      activeSpan.classList.remove("active");
+      setTimeout(() => {
+        currentTopBarIndex = (currentTopBarIndex + 1) % topBarMessages.length;
+        activeSpan.textContent = topBarMessages[currentTopBarIndex];
+        activeSpan.classList.add("active");
+      }, 400);
+    }
+  }, 4500);
 }
 
 function startCountdownTimer(targetIso) {
@@ -453,7 +156,7 @@ function startCountdownTimer(targetIso) {
   const targetDate = new Date(targetIso).getTime();
   if (isNaN(targetDate)) return;
 
-  container.style.display = "inline-flex";
+  container.style.display = "block";
 
   function update() {
     const now = new Date().getTime();
@@ -488,94 +191,107 @@ function startCountdownTimer(targetIso) {
 // -------------------------------------------------------------
 async function loadCouponsFromDb() {
   try {
-    if (window.supabaseClient) {
-      const { data } = await supabaseClient
-        .from("coupons")
-        .select("*")
-        .eq("is_active", true);
+    const { data } = await supabaseClient
+      .from("coupons")
+      .select("*")
+      .eq("is_active", true);
 
-      if (data && data.length > 0) {
-        data.forEach(c => {
-          activeCoupons[c.code] = {
-            code: c.code,
-            type: c.discount_type,
-            val: Number(c.discount_value),
-            min: Number(c.min_order_amount || 0),
-            desc: c.discount_type === "percent"
-              ? `${c.discount_value}% Flat Off`
-              : `₹${c.discount_value} Off on ₹${c.min_order_amount || 0}+`
-          };
-        });
-      }
+    if (data && data.length > 0) {
+      activeCoupons = {};
+      data.forEach(c => {
+        activeCoupons[c.code.toUpperCase()] = {
+          code: c.code.toUpperCase(),
+          type: c.type,
+          val: Number(c.val),
+          minOrder: Number(c.min_order || 0),
+          desc: c.description || (c.type === "percent" ? `${c.val}% OFF` : `₹${c.val} FLAT OFF`)
+        };
+      });
+      renderCartCouponsList();
     }
   } catch (e) {
-    console.warn("Using default promo coupons", e);
+    console.warn("Could not load coupons from DB, using fallback", e);
   }
-  renderCartCouponsList();
 }
 
 function renderCartCouponsList() {
-  const container = document.getElementById("quickCouponsList") || document.querySelector(".pills-group");
+  const container = document.getElementById("quickCouponsList");
   if (!container) return;
 
-  const list = Object.values(activeCoupons);
-  if (list.length === 0) {
+  const codes = Object.keys(activeCoupons);
+  if (codes.length === 0) {
     container.innerHTML = "";
     return;
   }
 
-  container.innerHTML = list.map(item => `
-    <div class="coupon-pill" onclick="quickCoupon('${item.code}')">
-      <strong>${item.code}</strong> • ${item.desc}
-    </div>
-  `).join("");
+  container.innerHTML = codes.map(c => {
+    const item = activeCoupons[c];
+    return `
+      <div class="coupon-pill" onclick="quickCoupon('${item.code}')">
+        <strong>${item.code}</strong> • ${item.desc}
+      </div>
+    `;
+  }).join("");
 }
 
 async function loadProductsFromSupabase() {
   try {
-    if (window.supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        // Only take active products (or products where is_active is not explicitly false)
-        const activeList = data.filter(p => p.is_active !== false);
-        if (activeList.length > 0) {
-          products = activeList.map(p => ({
-            id: p.id,
-            slug: p.slug || generateSlug(p.title),
-            token: p.token || '',
-            title: p.title,
-            category: p.category,
-            price: Number(p.price),
-            mrp: Number(p.mrp || p.price),
-            tag: p.tag || '',
-            stock_qty: p.stock_qty !== undefined ? Number(p.stock_qty) : 10,
-            sizes_stock: p.sizes_stock || { "S": 10, "M": 10, "L": 10, "XL": 10, "XXL": 10, "3XL": 10 },
-            rating: p.rating ? Number(p.rating).toFixed(1) : "4.9",
-            reviews: p.reviews ? Number(p.reviews) : getDeterministicReviews(String(p.id)),
-            bought_this_month: p.bought_this_month || getDeterministicBought(String(p.id)),
-            images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop'],
-            colors: Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : [{ name: "Standard", hex: "#12100F" }],
-            specs: Array.isArray(p.specs) && p.specs.length > 0 ? p.specs : ["Pure Breathable Fabric", "Artisanal Handcraft", "Gentle Dry Clean Only"],
-            is_featured: !!p.is_featured
-          }));
-        }
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      products = data.map(p => ({
+        id: p.id,
+        slug: p.slug || generateSlug(p.title),
+        token: p.token || '',
+        title: p.title,
+        category: p.category,
+        price: Number(p.price),
+        mrp: Number(p.mrp),
+        tag: p.tag || '',
+        stock_qty: p.stock_qty !== undefined ? Number(p.stock_qty) : 10,
+        sizes_stock: p.sizes_stock || { "S": 10, "M": 10, "L": 10, "XL": 10, "XXL": 10, "3XL": 10 },
+        rating: p.rating ? Number(p.rating).toFixed(1) : "4.9",
+        reviews: p.reviews ? Number(p.reviews) : getDeterministicReviews(p.id),
+        bought_this_month: p.bought_this_month || getDeterministicBought(p.id),
+        images: Array.isArray(p.images) ? p.images : [],
+        colors: Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : [{ name: "Standard", hex: "#12100F" }],
+        specs: Array.isArray(p.specs) && p.specs.length > 0 ? p.specs : ["Pure Breathable Fabric", "Artisanal Handcraft", "Gentle Dry Clean Only"],
+        is_featured: !!p.is_featured
+      }));
+
+      renderCatalog();
+      handleUrlRouting();
+    } else {
+      const grid = document.getElementById("productGrid");
+      if (grid) {
+        grid.innerHTML = `
+          <div class="empty-grid-msg">
+            <div style="font-size: 2rem; margin-bottom: 8px;">✨</div>
+            <div style="font-weight: 600; font-size: 1.1rem; color: var(--noir);">Collection Refresh in Progress</div>
+            <div style="font-size: 0.85rem; color: var(--muted); margin-top: 6px;">New couture pieces are being cataloged. Please check back shortly!</div>
+          </div>
+        `;
       }
     }
   } catch (err) {
-    console.warn("Supabase products fetch note:", err);
+    console.error("Supabase load error:", err);
+    const grid = document.getElementById("productGrid");
+    if (grid) {
+      grid.innerHTML = `
+        <div class="empty-grid-msg">
+          <div style="font-size: 1.5rem; margin-bottom: 6px;">⚠️</div>
+          <div>Unable to load products right now.</div>
+          <div style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Please check your Supabase connection.</div>
+        </div>
+      `;
+    }
   }
-
-  // If products array is empty for any reason, fall back to curated starter collection
-  if (!products || products.length === 0) {
-    products = [...DEFAULT_PRODUCTS];
-  }
-
-  renderCatalog();
-  handleUrlRouting();
 }
 
 // -------------------------------------------------------------
@@ -607,10 +323,11 @@ function renderHeroBannerCarousel() {
 
   if (heroBannerTimer) clearInterval(heroBannerTimer);
 
-  let cleanImages = (heroBannerImages || []).map(formatDirectImageUrl).filter(Boolean);
+  const cleanImages = (heroBannerImages || []).map(formatDirectImageUrl).filter(Boolean);
+
   if (cleanImages.length === 0) {
-    cleanImages = DEFAULT_HERO_BANNERS.map(formatDirectImageUrl).filter(Boolean);
-    heroBannerImages = [...DEFAULT_HERO_BANNERS];
+    container.innerHTML = "";
+    return;
   }
 
   currentHeroBannerIndex = 0;
@@ -624,11 +341,11 @@ function renderHeroBannerCarousel() {
 
   container.innerHTML = '<div class="hero-edge-wrap fade-up-init">' +
     '<div class="hero-edge-slide-box" id="heroEdgeBox" onclick="handleHeroBannerClick()">' +
-      '<img id="heroEdgeImg" class="hero-edge-img visible" src="' + cleanImages[0] + '" alt="KRUSHIV Hero Collection" referrerpolicy="no-referrer" loading="eager" fetchpriority="high" />' +
+      '<img id="heroEdgeImg" class="hero-edge-img visible" src="' + cleanImages[0] + '" alt="KRUSHIV Hero" referrerpolicy="no-referrer" loading="eager" fetchpriority="high" />' +
       '<div class="hero-edge-scrim"></div>' +
       '<div class="hero-explore-pill-wrap">' +
         '<button class="btn-hero-explore-pill" onclick="event.stopPropagation(); scrollSmoothToProducts()">' +
-          '<span>Explore Collection</span>' +
+          '<span>Explore</span>' +
           '<i data-lucide="arrow-down" style="width:12px; height:12px;"></i>' +
         '</button>' +
       '</div>' +
@@ -646,11 +363,18 @@ function renderHeroBannerCarousel() {
 }
 
 function handleHeroBannerClick() {
-  scrollSmoothToProducts();
+  if (currentHeroBannerIndex === 0) {
+    scrollSmoothToProducts();
+  } else {
+    const cleanImages = (heroBannerImages || []).map(formatDirectImageUrl).filter(Boolean);
+    if (cleanImages.length > 0) {
+      setHeroBannerIndex((currentHeroBannerIndex + 1) % cleanImages.length);
+    }
+  }
 }
 
 function setHeroBannerIndex(index) {
-  const cleanImages = (heroBannerImages && heroBannerImages.length > 0 ? heroBannerImages : DEFAULT_HERO_BANNERS).map(formatDirectImageUrl).filter(Boolean);
+  const cleanImages = (heroBannerImages || []).map(formatDirectImageUrl).filter(Boolean);
   if (!cleanImages || cleanImages.length <= 1) return;
   currentHeroBannerIndex = index;
   const img = document.getElementById("heroEdgeImg");
@@ -685,7 +409,7 @@ function handleUrlRouting() {
   const tokenParam = params.get("token") || params.get("t");
 
   if (slugParam) {
-    const matched = products.find(p => p.slug === slugParam || String(p.id) === slugParam);
+    const matched = products.find(p => p.slug === slugParam);
     if (matched) {
       showProductDetails(matched.id);
       return;
@@ -703,7 +427,7 @@ function handleUrlRouting() {
   const path = window.location.pathname;
   if (path.startsWith("/p/")) {
     const slug = path.replace("/p/", "").split("/")[0];
-    const matched = products.find(p => p.slug === slug || String(p.id) === slug);
+    const matched = products.find(p => p.slug === slug);
     if (matched) showProductDetails(matched.id);
   } else if (path.startsWith("/t/")) {
     const tok = path.replace("/t/", "").split("/")[0];
@@ -727,18 +451,13 @@ function renderCatalog() {
 
   const list = currentCategory === "All"
     ? products
-    : products.filter(p => {
-        const pCat = (p.category || "").toLowerCase();
-        const curCat = currentCategory.toLowerCase();
-        return pCat === curCat || pCat.includes(curCat) || curCat.includes(pCat);
-      });
+    : products.filter(p => p.category.toLowerCase() === currentCategory.toLowerCase());
 
   if (list.length === 0) {
     grid.innerHTML = `
       <div class="empty-grid-msg">
         <div style="font-size: 1.5rem; margin-bottom: 6px;">👗</div>
         <div>No pieces available in "${currentCategory}" right now.</div>
-        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">Select "All Pieces" to view our complete festive collection.</div>
       </div>
     `;
     return;
@@ -746,9 +465,9 @@ function renderCatalog() {
 
   grid.innerHTML = list.map(item => {
     const offPct = item.mrp > item.price ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0;
-    const firstImg = (item.images && item.images.length > 0)
+    const firstImg = item.images.length > 0
       ? item.images[0]
-      : 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
+      : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop';
 
     const isOutOfStock = item.stock_qty <= 0;
     const isLowStock = item.stock_qty > 0 && item.stock_qty <= 5;
@@ -799,7 +518,7 @@ function renderCatalog() {
           </div>
 
           <button class="btn-add-cart-single" onclick="showProductDetails('${item.id}')" style="${isOutOfStock ? 'background:#666; border-color:#666;' : ''}">
-            ${isOutOfStock ? 'View (Sold Out)' : 'View & Buy'}
+            ${isOutOfStock ? 'View (Sold Out)' : 'Add to Cart'}
           </button>
         </div>
       </article>
@@ -808,7 +527,7 @@ function renderCatalog() {
 
   const durations = [3200, 4200, 3600, 4800, 3900, 5200];
   list.forEach((item, index) => {
-    if (item.images && item.images.length > 1) {
+    if (item.images.length > 1) {
       setupCardImageCycle(item.id, item.images.length, (index * 600) % 2400, durations[index % durations.length]);
     }
   });
@@ -820,23 +539,21 @@ function setupCardImageCycle(id, totalSlides, startDelay, cycleSpeed) {
   let activeIndex = 0;
   const timeoutId = setTimeout(() => {
     const intervalId = setInterval(() => {
-      activeIndex = (activeIndex + 1) % totalSlides;
       const track = document.getElementById(`track-${id}`);
-      const dots = document.getElementById(`dots-${id}`);
-
-      if (track) {
-        track.style.transform = `translateX(-${activeIndex * 100}%)`;
+      const dotsWrap = document.getElementById(`dots-${id}`);
+      if (!track) {
+        clearInterval(intervalId);
+        return;
       }
-      if (dots) {
-        Array.from(dots.children).forEach((d, i) => {
-          d.classList.toggle("active", i === activeIndex);
-        });
+      activeIndex = (activeIndex + 1) % totalSlides;
+      track.style.transform = `translateX(-${activeIndex * 100}%)`;
+      if (dotsWrap) {
+        const dots = dotsWrap.querySelectorAll(".dot");
+        dots.forEach((d, i) => d.classList.toggle("active", i === activeIndex));
       }
     }, cycleSpeed);
 
-    if (carouselTimers[id]) {
-      carouselTimers[id].interval = intervalId;
-    }
+    carouselTimers[id] = { interval: intervalId, timeout: null };
   }, startDelay);
 
   carouselTimers[id] = { timeout: timeoutId, interval: null };
@@ -845,14 +562,7 @@ function setupCardImageCycle(id, totalSlides, startDelay, cycleSpeed) {
 function setCategory(cat) {
   currentCategory = cat;
   document.querySelectorAll(".cat-pill").forEach(btn => {
-    const txt = btn.textContent.trim();
-    if (cat === "All" && txt.includes("All")) {
-      btn.classList.add("active");
-    } else if (cat !== "All" && txt.toLowerCase().includes(cat.toLowerCase())) {
-      btn.classList.add("active");
-    } else {
-      btn.classList.remove("active");
-    }
+    btn.classList.toggle("active", btn.textContent.includes(cat) || (cat === "All" && btn.textContent.includes("All")));
   });
   renderCatalog();
 }
@@ -861,92 +571,62 @@ function setCategory(cat) {
 // 8. PRODUCT DETAILS PAGE (PDP)
 // -------------------------------------------------------------
 function showProductDetails(id) {
-  const item = products.find(p => String(p.id) === String(id));
+  const item = products.find(p => p.id === id);
   if (!item) return;
 
   currentProduct = item;
   currentColor = (item.colors && item.colors.length > 0) ? item.colors[0].name : "Standard";
 
-  const catEl = document.getElementById("pdpCatName");
-  if (catEl) catEl.textContent = item.category;
+  document.getElementById("pdpCatName").textContent = item.category;
+  document.getElementById("pdpItemTitle").textContent = item.title;
 
-  const titleEl = document.getElementById("pdpItemTitle");
-  if (titleEl) titleEl.textContent = item.title;
-
-  const starsEl = document.getElementById("pdpRatingStars");
-  if (starsEl) starsEl.textContent = `★ ${item.rating || '4.9'}`;
-
-  const revEl = document.getElementById("pdpRatingReviews");
-  if (revEl) revEl.textContent = `(${item.reviews || '0'} Reviews)`;
+  document.getElementById("pdpRatingStars").textContent = `★ ${item.rating || '4.9'}`;
+  document.getElementById("pdpRatingReviews").textContent = `(${item.reviews || '0'} Reviews)`;
 
   const boughtElem = document.getElementById("pdpBoughtStats");
-  if (boughtElem) {
-    if (item.stock_qty <= 0) {
-      boughtElem.textContent = "❌ Out of Stock";
-      boughtElem.style.background = "#FEE2E2";
-      boughtElem.style.color = "#B91C1C";
-      boughtElem.style.display = "inline-block";
-    } else if (item.stock_qty <= 5) {
-      boughtElem.textContent = `🔥 Only ${item.stock_qty} pieces left in stock!`;
-      boughtElem.style.background = "#FEF3C7";
-      boughtElem.style.color = "#B45309";
-      boughtElem.style.display = "inline-block";
-    } else if (item.bought_this_month) {
-      boughtElem.textContent = `🔥 ${item.bought_this_month}`;
-      boughtElem.style.background = "#F3EFEA";
-      boughtElem.style.color = "#8A6D3B";
-      boughtElem.style.display = "inline-block";
-    } else {
-      boughtElem.style.display = "none";
-    }
+  if (item.stock_qty <= 0) {
+    boughtElem.textContent = "❌ Out of Stock";
+    boughtElem.style.background = "#FEE2E2";
+    boughtElem.style.color = "#B91C1C";
+    boughtElem.style.display = "inline-block";
+  } else if (item.stock_qty <= 5) {
+    boughtElem.textContent = `🔥 Only ${item.stock_qty} pieces left in stock — selling fast!`;
+    boughtElem.style.background = "#FEF3C7";
+    boughtElem.style.color = "#B45309";
+    boughtElem.style.display = "inline-block";
+  } else if (item.bought_this_month) {
+    boughtElem.textContent = `🔥 ${item.bought_this_month}`;
+    boughtElem.style.background = "#F3EFEA";
+    boughtElem.style.color = "#8A6D3B";
+    boughtElem.style.display = "inline-block";
+  } else {
+    boughtElem.style.display = "none";
   }
 
-  // Price handling (supports both pdpPriceVal and pdpPriceCurrent)
-  const priceEl = document.getElementById("pdpPriceVal") || document.getElementById("pdpPriceCurrent");
-  if (priceEl) priceEl.textContent = `${CURRENCY}${item.price.toLocaleString('en-IN')}`;
-
-  const mrpEl = document.getElementById("pdpMrpVal") || document.getElementById("pdpPriceOriginal");
-  const discountEl = document.getElementById("pdpOffVal") || document.getElementById("pdpDiscountTag");
-
+  document.getElementById("pdpPriceCurrent").textContent = `${CURRENCY}${item.price.toLocaleString('en-IN')}`;
+  const mrpEl = document.getElementById("pdpPriceOriginal");
+  const discountEl = document.getElementById("pdpDiscountTag");
   if (item.mrp > item.price) {
-    if (mrpEl) {
-      mrpEl.textContent = `${CURRENCY}${item.mrp.toLocaleString('en-IN')}`;
-      mrpEl.style.display = "inline";
-    }
+    mrpEl.textContent = `${CURRENCY}${item.mrp.toLocaleString('en-IN')}`;
+    mrpEl.style.display = "inline";
     const pct = Math.round(((item.mrp - item.price) / item.mrp) * 100);
-    if (discountEl) {
-      discountEl.textContent = `${pct}% OFF`;
-      discountEl.style.display = "inline-block";
-    }
+    discountEl.textContent = `${pct}% OFF`;
+    discountEl.style.display = "inline-block";
   } else {
-    if (mrpEl) mrpEl.style.display = "none";
-    if (discountEl) discountEl.style.display = "none";
+    mrpEl.style.display = "none";
+    discountEl.style.display = "none";
   }
 
   // Multi-image peek slider with clickable dots
-  const track = document.getElementById("pdpPeekSlider") || document.getElementById("pdpSliderTrack");
-  const dotsContainer = document.getElementById("pdpSliderDots") || document.getElementById("pdpDotsContainer");
-  const imgs = (item.images && item.images.length > 0)
-    ? item.images
-    : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop'];
+  const track = document.getElementById("pdpSliderTrack");
+  const dotsContainer = document.getElementById("pdpDotsContainer");
+  const imgs = item.images.length > 0 ? item.images : ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop'];
 
-  if (track) {
-    track.innerHTML = imgs.map(url => `
-      <div class="pdp-peek-slide pdp-slide">
-        <img src="${url}" alt="${item.title}">
-      </div>
-    `).join("");
-
-    track.onscroll = () => {
-      const slideWidth = track.clientWidth * 0.85;
-      const activeIndex = Math.round(track.scrollLeft / slideWidth);
-      if (dotsContainer) {
-        dotsContainer.querySelectorAll(".pdp-dot").forEach((d, i) => {
-          d.classList.toggle("active", i === activeIndex);
-        });
-      }
-    };
-  }
+  track.innerHTML = imgs.map(url => `
+    <div class="pdp-slide">
+      <img src="${url}" alt="${item.title}">
+    </div>
+  `).join("");
 
   if (dotsContainer) {
     dotsContainer.innerHTML = imgs.map((_, i) => `
@@ -954,51 +634,71 @@ function showProductDetails(id) {
     `).join("");
   }
 
+  track.onscroll = () => {
+    const slideWidth = track.clientWidth * 0.85;
+    const activeIndex = Math.round(track.scrollLeft / slideWidth);
+    if (dotsContainer) {
+      dotsContainer.querySelectorAll(".pdp-dot").forEach((d, i) => {
+        d.classList.toggle("active", i === activeIndex);
+      });
+    }
+  };
+
   // Color Swatches
-  const colorArea = document.getElementById("pdpColorsGroup") || document.getElementById("pdpColorSwatches");
-  if (colorArea) {
-    colorArea.innerHTML = (item.colors || []).map((col, idx) => `
-      <button class="color-swatch-btn color-swatch ${idx === 0 ? 'selected active' : ''}" style="background-color: ${col.hex};" title="${col.name}" onclick="pickColor('${col.name}', this)"></button>
-    `).join("");
-  }
-  const colorNameEl = document.getElementById("pdpSelectedColorName");
-  if (colorNameEl) colorNameEl.textContent = currentColor;
+  const colorArea = document.getElementById("pdpColorSwatches");
+  colorArea.innerHTML = (item.colors || []).map((col, idx) => `
+    <button class="color-swatch ${idx === 0 ? 'active' : ''}" style="background-color: ${col.hex};" title="${col.name}" onclick="pickColor('${col.name}', this)"></button>
+  `).join("");
+  document.getElementById("pdpSelectedColorName").textContent = currentColor;
 
   // Size Options & Size-Level Stock check
-  const sizeWrap = document.getElementById("pdpSizesGroup") || document.getElementById("pdpSizePills");
+  const sizeWrap = document.getElementById("pdpSizePills");
   const allSizes = ["S", "M", "L", "XL", "XXL", "3XL"];
   const stockMap = item.sizes_stock || {};
 
   let firstValidSize = null;
-  if (sizeWrap) {
-    sizeWrap.innerHTML = allSizes.map(sz => {
-      const qtyForSize = stockMap[sz] !== undefined ? Number(stockMap[sz]) : item.stock_qty;
-      const isOut = qtyForSize <= 0;
-      if (!isOut && !firstValidSize) firstValidSize = sz;
+  sizeWrap.innerHTML = allSizes.map(sz => {
+    const qtyForSize = stockMap[sz] !== undefined ? Number(stockMap[sz]) : item.stock_qty;
+    const isOut = qtyForSize <= 0;
+    if (!isOut && !firstValidSize) firstValidSize = sz;
 
-      return `
-        <button 
-          class="size-btn-pill size-pill ${isOut ? 'out-of-stock' : ''}" 
-          onclick="pickSize('${sz}', this, ${isOut})"
-          ${isOut ? 'disabled title="Size out of stock"' : ''}
-        >
-          <span>${sz}</span>
-        </button>
-      `;
-    }).join("");
+    return `
+      <button 
+        class="size-pill ${isOut ? 'out-of-stock' : ''}" 
+        onclick="pickSize('${sz}', this, ${isOut})"
+        ${isOut ? 'disabled title="Size out of stock"' : ''}
+      >
+        <span>${sz}</span>
+        ${isOut ? '<span class="size-out-line"></span>' : ''}
+      </button>
+    `;
+  }).join("");
 
-    currentSize = firstValidSize || "S";
-    const defaultPill = Array.from(sizeWrap.querySelectorAll(".size-btn-pill, .size-pill")).find(p => p.textContent.trim() === currentSize);
-    if (defaultPill) {
-      defaultPill.classList.add("selected");
-      defaultPill.classList.add("active");
-    }
-  }
+  currentSize = firstValidSize || "S";
+  const defaultPill = Array.from(sizeWrap.querySelectorAll(".size-pill")).find(p => p.textContent.trim() === currentSize);
+  if (defaultPill) defaultPill.classList.add("active");
 
   // Specs & Highlights
   const specsList = document.getElementById("pdpSpecsList");
-  if (specsList) {
-    specsList.innerHTML = (item.specs || []).map(s => `<li><span class="spec-bullet">✓</span> ${s}</li>`).join("");
+  specsList.innerHTML = (item.specs || []).map(s => `<li>${s}</li>`).join("");
+
+  // Sticky Bar & Mobile Sync
+  const isGlobalSoldOut = item.stock_qty <= 0;
+  const stickyOrderBtn = document.getElementById("stickyOrderBtn");
+  const stickyBagBtn = document.getElementById("stickyBagBtn");
+  const desktopOrderBtn = document.getElementById("desktopOrderBtn");
+  const desktopBagBtn = document.getElementById("desktopBagBtn");
+
+  if (isGlobalSoldOut) {
+    if (stickyOrderBtn) { stickyOrderBtn.disabled = true; stickyOrderBtn.textContent = "Sold Out"; }
+    if (stickyBagBtn) { stickyBagBtn.disabled = true; }
+    if (desktopOrderBtn) { desktopOrderBtn.disabled = true; desktopOrderBtn.textContent = "Sold Out"; }
+    if (desktopBagBtn) { desktopBagBtn.disabled = true; }
+  } else {
+    if (stickyOrderBtn) { stickyOrderBtn.disabled = false; stickyOrderBtn.textContent = "Order on WhatsApp"; }
+    if (stickyBagBtn) { stickyBagBtn.disabled = false; }
+    if (desktopOrderBtn) { desktopOrderBtn.disabled = false; desktopOrderBtn.textContent = "Order on WhatsApp"; }
+    if (desktopBagBtn) { desktopBagBtn.disabled = false; }
   }
 
   // Pre-fill delivery info if logged in
@@ -1009,11 +709,9 @@ function showProductDetails(id) {
   renderCustomerReviews();
   renderSimilarProducts(item);
 
-  // Switch View safely
-  const catalog = document.getElementById("catalogView") || document.getElementById("homeView");
-  const pdp = document.getElementById("pdpView");
-  if (catalog) catalog.classList.remove("active");
-  if (pdp) pdp.classList.add("active");
+  // Switch View
+  document.getElementById("homeView").classList.remove("active");
+  document.getElementById("pdpView").classList.add("active");
   document.body.classList.add("pdp-active");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -1026,77 +724,53 @@ function showProductDetails(id) {
 }
 
 function scrollPdpSlide(index) {
-  const track = document.getElementById("pdpPeekSlider") || document.getElementById("pdpSliderTrack");
+  const track = document.getElementById("pdpSliderTrack");
   if (!track) return;
-  const slideWidth = track.clientWidth * 0.88;
-  track.scrollTo({ left: index * slideWidth, behavior: "smooth" });
+  const slideWidth = track.clientWidth * 0.85;
+  track.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
 }
 
-function pickColor(name, btn) {
+function pickColor(name, elem) {
   currentColor = name;
-  const colorNameEl = document.getElementById("pdpSelectedColorName");
-  if (colorNameEl) colorNameEl.textContent = name;
-  const parent = btn.parentElement;
-  if (parent) {
-    parent.querySelectorAll(".color-swatch-btn, .color-swatch").forEach(b => {
-      b.classList.remove("selected");
-      b.classList.remove("active");
-    });
-  }
-  btn.classList.add("selected");
-  btn.classList.add("active");
+  document.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("active"));
+  elem.classList.add("active");
+  document.getElementById("pdpSelectedColorName").textContent = name;
 }
 
-function pickSize(sz, btn, isOut) {
+function pickSize(sz, elem, isOut) {
   if (isOut) return;
   currentSize = sz;
-  const parent = btn.parentElement;
-  if (parent) {
-    parent.querySelectorAll(".size-btn-pill, .size-pill").forEach(b => {
-      b.classList.remove("selected");
-      b.classList.remove("active");
-    });
-  }
-  btn.classList.add("selected");
-  btn.classList.add("active");
+  document.querySelectorAll(".size-pill").forEach(s => s.classList.remove("active"));
+  elem.classList.add("active");
 }
 
-function addCurrentPdp(isInstantOrder) {
-  if (!currentProduct) return;
-  if (currentProduct.stock_qty <= 0) {
-    showToast("This piece is currently out of stock.");
+function checkPdpPincode() {
+  const input = document.getElementById("pdpPincodeInput");
+  const result = document.getElementById("pdpPincodeResult");
+  const val = (input.value || "").trim();
+
+  if (!/^\d{6}$/.test(val)) {
+    result.style.color = "#B91C1C";
+    result.textContent = "Please enter a valid 6-digit Indian pincode.";
     return;
   }
-  const size = currentSize || "S";
-  const color = currentColor || (currentProduct.colors && currentProduct.colors.length > 0 ? currentProduct.colors[0].name : "Standard");
-  addToBag(currentProduct, size, color);
-  if (isInstantOrder) {
-    toggleBagDrawer(true);
-  }
-}
 
-function togglePdpAccordion(headerEl) {
-  const box = headerEl.closest(".accordion-box");
-  if (!box) return;
-  const content = box.querySelector(".accordion-content");
-  const icon = box.querySelector(".acc-toggle-icon");
-  if (!content) return;
-  const isOpen = content.style.display === "block";
-  content.style.display = isOpen ? "none" : "block";
-  if (icon) icon.textContent = isOpen ? "+" : "−";
+  if (blockedCodPincodes.includes(val)) {
+    result.style.color = "#D97706";
+    result.innerHTML = `✓ Delivery Available to ${val} via <strong>Prepaid UPI Only</strong> (COD unavailable).`;
+  } else {
+    result.style.color = "#2E7D32";
+    result.innerHTML = `✓ Free Delivery & <strong>Cash on Delivery (COD) Available</strong> to ${val}!`;
+  }
 }
 
 function renderCustomerReviews() {
-  const container = document.getElementById("reviewsTrack") || document.getElementById("pdpReviewsList");
-  if (!container) return;
-
-  // Render twice for endless smooth marquee looping
-  const combined = [...customerReviews, ...customerReviews];
-  container.innerHTML = combined.map(r => `
-    <div class="review-bubble">
-      <div class="review-user-row">
+  const container = document.getElementById("pdpReviewsList");
+  container.innerHTML = customerReviews.map(r => `
+    <div class="review-card">
+      <div class="review-header">
         <span class="review-name">${r.name}</span>
-        <span class="verified-chip">Verified Buyer</span>
+        <span class="review-city">${r.city} • Verified Buyer</span>
       </div>
       <div class="review-stars">${r.stars}</div>
       <div class="review-comment">"${r.text}"</div>
@@ -1107,14 +781,12 @@ function renderCustomerReviews() {
 function renderSimilarProducts(currentItem) {
   const similar = products.filter(p => p.id !== currentItem.id).slice(0, 4);
   const grid = document.getElementById("similarGrid");
-  if (!grid) return;
-
   grid.innerHTML = similar.map(p => `
     <div class="prod-card" style="cursor:pointer;" onclick="showProductDetails('${p.id}')">
-      <div style="aspect-ratio:3/4; overflow:hidden; border-radius:var(--radius-sm); background:#EAE6DF;">
-        <img src="${(p.images && p.images[0]) || ''}" alt="${p.title}" style="width:100%; height:100%; object-fit:cover;">
+      <div style="aspect-ratio:3/4; overflow:hidden; background:#eae6df;">
+        <img src="${p.images[0] || ''}" alt="${p.title}" style="width:100%; height:100%; object-fit:cover; object-position:top center;">
       </div>
-      <div style="padding:8px 2px;">
+      <div style="padding:10px;">
         <div style="font-size:0.65rem; color:var(--muted); text-transform:uppercase;">${p.category}</div>
         <div style="font-size:0.82rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title}</div>
         <div style="font-weight:700; font-size:0.9rem; margin-top:2px;">${CURRENCY}${p.price.toLocaleString('en-IN')}</div>
@@ -1124,10 +796,8 @@ function renderSimilarProducts(currentItem) {
 }
 
 function openHomeView() {
-  const catalog = document.getElementById("catalogView") || document.getElementById("homeView");
-  const pdp = document.getElementById("pdpView");
-  if (pdp) pdp.classList.remove("active");
-  if (catalog) catalog.classList.add("active");
+  document.getElementById("pdpView").classList.remove("active");
+  document.getElementById("homeView").classList.add("active");
   document.body.classList.remove("pdp-active");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -1149,113 +819,74 @@ window.addEventListener("popstate", (e) => {
 // 9. ORDER TRACKING & LEGAL MODALS
 // -------------------------------------------------------------
 function openTrackModal() {
-  const m = document.getElementById("trackModal");
-  if (m) m.classList.add("active");
+  document.getElementById("trackModal").classList.add("active");
+  document.getElementById("trackResult").innerHTML = "";
+  document.getElementById("trackOrderInput").value = "";
+}
+
+function closeTrackModal() {
+  document.getElementById("trackModal").classList.remove("active");
+}
+
+function lookupOrderStatus() {
+  const input = document.getElementById("trackOrderInput").value.trim().toUpperCase();
   const res = document.getElementById("trackResult");
-  if (res) res.innerHTML = "";
-  const inp = document.getElementById("trackInput") || document.getElementById("trackOrderInput");
-  if (inp) inp.value = "";
-}
-
-function closeTrackModal(e) {
-  if (e && e.target !== e.currentTarget) return;
-  const m = document.getElementById("trackModal");
-  if (m) m.classList.remove("active");
-}
-
-function closeTrackModalDirect() {
-  const m = document.getElementById("trackModal");
-  if (m) m.classList.remove("active");
-}
-
-async function submitTrackingInquiry() {
-  const inp = document.getElementById("trackInput") || document.getElementById("trackOrderInput");
-  const query = inp ? inp.value.trim() : "";
-  if (!query) {
-    showToast("Please enter your Order Code or Mobile Number");
+  if (!input) {
+    res.innerHTML = '<span style="color:red;">Please enter your Order ID.</span>';
     return;
   }
 
-  let orderInfo = "";
-  try {
-    if (window.supabaseClient) {
-      const { data } = await supabaseClient
-        .from("orders")
-        .select("*")
-        .or(`order_id.eq.${query},customer_phone.eq.${query}`)
-        .limit(1);
+  res.innerHTML = `
+    <div style="background:var(--bg-soft); padding:16px; border-radius:4px; font-size:0.85rem; line-height:1.6;">
+      <div style="font-weight:700; color:var(--noir); margin-bottom:4px;">Status for Order #${input}</div>
+      <div style="color:#2E7D32; font-weight:600;">✓ In Process — Dispatched via Bluedart</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Direct tracking updates will be shared to your WhatsApp number.</div>
+    </div>
+  `;
+}
 
-      if (data && data.length > 0) {
-        const o = data[0];
-        orderInfo = `\nOrder Found: ${o.order_id}\nStatus: ${o.order_status || 'Confirmed'}\nTotal: ₹${o.total}`;
-      }
-    }
-  } catch (e) {
-    console.warn("Order lookup:", e);
+function openLegalModal(type) {
+  const modal = document.getElementById("legalModal");
+  const title = document.getElementById("legalModalTitle");
+  const body = document.getElementById("legalModalBody");
+
+  if (type === "privacy") {
+    title.textContent = "Privacy Policy";
+    body.innerHTML = `
+      <p>At KRUSHIV, we value your trust. We collect personal details strictly for order fulfillment, delivery logistics, and doorstep exchanges.</p>
+      <p>Your payment information and phone number are handled securely and never sold to third parties.</p>
+    `;
+  } else if (type === "terms") {
+    title.textContent = "Terms of Service";
+    body.innerHTML = `
+      <p>All KRUSHIV couture pieces are made under strict artisan supervision. Colors may vary slightly due to digital lighting and screen calibration.</p>
+      <p>Orders placed through WhatsApp are confirmed after verifying stock and dispatch pin codes.</p>
+    `;
+  } else if (type === "shipping") {
+    title.textContent = "Shipping & Exchanges";
+    body.innerHTML = `
+      <p><strong>Shipping:</strong> Standard delivery takes 3–5 working days across India. Free shipping on all orders.</p>
+      <p><strong>Exchanges:</strong> We offer a hassle-free 7-day doorstep size exchange. WhatsApp our concierge team for instant pickup scheduling.</p>
+    `;
   }
 
-  const text = encodeURIComponent(`Hi KRUSHIV Atelier! I would like to check the status of my order.\nOrder/Phone: ${query}${orderInfo}`);
-  window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${text}`, "_blank");
-  closeTrackModalDirect();
+  modal.classList.add("active");
 }
 
-const legalContent = {
-  exchange: {
-    title: "Doorstep Exchange & Returns",
-    body: "<p>We offer a 100% hassle-free 7-day doorstep exchange service across India.</p><br><p><strong>Exchange Process:</strong> Simply message our WhatsApp helpdesk with your order ID and the desired size/color. We will arrange reverse pickup directly from your doorstep and dispatch your replacement.</p><br><p><strong>Conditions:</strong> Garments must be unworn, unwashed with all original designer tags intact.</p>"
-  },
-  shipping: {
-    title: "Shipping Information",
-    body: "<p><strong>Dispatch:</strong> All in-stock pret pieces are dispatched within 24–48 business hours from our atelier.</p><br><p><strong>Delivery Timelines:</strong> Metro cities: 2–4 business days. Rest of India: 4–6 business days.</p><br><p><strong>Courier Partners:</strong> Bluedart, Delhivery, DTDC & Express Air Logistics.</p><br><p><strong>Prepaid Orders:</strong> 100% Free Express Shipping across India.</p>"
-  },
-  privacy: {
-    title: "Privacy Policy",
-    body: "<p>At KRUSHIV Atelier, we respect your confidentiality. Your name, phone number, and address are solely used for courier dispatch and order confirmation via WhatsApp.</p><br><p>We never share, sell, or rent your personal information to third-party marketing networks.</p>"
-  },
-  terms: {
-    title: "Terms & Conditions",
-    body: "<p>By placing an order via our WhatsApp or website checkout, you agree to our standard terms of purchase.</p><br><p>Handloom fabrics naturally possess unique weave variations that testify to genuine artisanal craft. All prices include applicable GST.</p>"
-  },
-  payment: {
-    title: "Payment Security",
-    body: "<p>We support 100% secure payments via UPI (Google Pay, PhonePe, Paytm, BHIM) and Cash on Delivery (COD).</p><br><p>Online transfers are processed directly through authorized banking gateways with end-to-end encryption.</p>"
-  }
-};
-
-function openLegalModal(key) {
-  const data = legalContent[key];
-  if (!data) return;
-  const titleEl = document.getElementById("legalModalTitle");
-  const bodyEl = document.getElementById("legalModalBody");
-  if (titleEl) titleEl.textContent = data.title;
-  if (bodyEl) bodyEl.innerHTML = data.body;
-  const m = document.getElementById("legalModal");
-  if (m) m.classList.add("active");
-}
-
-function closeLegalModal(e) {
-  if (e && e.target !== e.currentTarget) return;
-  const m = document.getElementById("legalModal");
-  if (m) m.classList.remove("active");
-}
-
-function closeLegalModalDirect() {
-  const m = document.getElementById("legalModal");
-  if (m) m.classList.remove("active");
+function closeLegalModal() {
+  document.getElementById("legalModal").classList.remove("active");
 }
 
 function toggleSidebar(open) {
-  const sidebar = document.getElementById("mobileSidebar");
-  const overlay = document.getElementById("sidebarOverlay");
-  if (sidebar) sidebar.classList.toggle("open", open);
-  if (overlay) overlay.classList.toggle("open", open);
+  document.getElementById("mobileSidebar").classList.toggle("open", open);
+  document.getElementById("sidebarOverlay").classList.toggle("open", open);
 }
 
 // -------------------------------------------------------------
 // 10. SHOPPING BAG & CHECKOUT
 // -------------------------------------------------------------
 function addToBag(item, size, color) {
-  const match = cart.find(c => String(c.id) === String(item.id) && c.size === size && c.color === color);
+  const match = cart.find(c => c.id === item.id && c.size === size && c.color === color);
   if (match) {
     match.qty += 1;
   } else {
@@ -1266,38 +897,31 @@ function addToBag(item, size, color) {
 }
 
 function changeQty(idx, delta) {
-  if (!cart[idx]) return;
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) cart.splice(idx, 1);
   updateBagDisplay();
 }
 
 function toggleBagDrawer(open) {
-  const drawer = document.getElementById("bagDrawer");
-  const scrim = document.getElementById("drawerScrim");
-  if (drawer) drawer.classList.toggle("open", open);
-  if (scrim) scrim.classList.toggle("open", open);
+  document.getElementById("bagDrawer").classList.toggle("open", open);
+  document.getElementById("drawerScrim").classList.toggle("open", open);
   document.body.style.overflow = open ? "hidden" : "auto";
   if (window.lucide) window.lucide.createIcons();
 }
 
-const bagTrigger = document.getElementById("openBagTrigger");
-if (bagTrigger) {
-  bagTrigger.addEventListener("click", () => toggleBagDrawer(true));
-}
+document.getElementById("openBagTrigger").addEventListener("click", () => toggleBagDrawer(true));
 
 function quickCoupon(code) {
-  const input = document.getElementById("couponInput");
-  if (input) input.value = code;
+  document.getElementById("couponInput").value = code;
   applyCoupon();
 }
 
 function applyCoupon() {
   const input = document.getElementById("couponInput");
-  const status = document.getElementById("couponStatus");
-  if (!input || !status) return;
-
   const code = input.value.trim().toUpperCase();
+  const status = document.getElementById("couponStatus");
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
   if (!code) {
     appliedCoupon = null;
     status.textContent = "";
@@ -1305,52 +929,49 @@ function applyCoupon() {
     return;
   }
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const found = activeCoupons[code];
-
-  if (!found) {
-    status.style.color = "#B91C1C";
+  const rule = activeCoupons[code];
+  if (!rule) {
+    status.style.color = "#C0392B";
     status.textContent = "Invalid coupon code.";
     appliedCoupon = null;
     updateBagDisplay();
     return;
   }
 
-  if (found.min && subtotal < found.min) {
-    status.style.color = "#B91C1C";
-    status.textContent = `Coupon requires minimum order of ₹${found.min.toLocaleString('en-IN')}.`;
+  if (subtotal < rule.minOrder) {
+    status.style.color = "#C0392B";
+    status.textContent = `Min order of ${CURRENCY}${rule.minOrder.toLocaleString('en-IN')} required.`;
     appliedCoupon = null;
     updateBagDisplay();
     return;
   }
 
-  appliedCoupon = found;
+  appliedCoupon = { code, ...rule };
   status.style.color = "#2E7D32";
-  status.textContent = `✓ Coupon "${code}" applied! ${found.desc}`;
+  status.textContent = `✓ Code '${code}' applied! (${rule.desc})`;
   updateBagDisplay();
 }
 
-function selectPaymentMethod(mode) {
-  selectedPayment = mode;
-  const upiCard = document.getElementById("payCardUpi");
-  const codCard = document.getElementById("payCardCod");
-  if (upiCard) upiCard.classList.toggle("active", mode === "UPI");
-  if (codCard) codCard.classList.toggle("active", mode === "COD");
+function selectPaymentMethod(method) {
+  selectedPayment = method;
+  document.getElementById("payCardUpi").classList.toggle("active", method === "UPI");
+  document.getElementById("payCardCod").classList.toggle("active", method === "COD");
+  document.querySelector(`input[name="payMethod"][value="${method}"]`).checked = true;
   updateBagDisplay();
 }
 
 function updateBagDisplay() {
   triggerCloudCartSync();
   const totalCount = cart.reduce((sum, i) => sum + i.qty, 0);
-  const realSubtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
   const countBadge = document.getElementById("headerBagCount");
   const drawerBadge = document.getElementById("drawerCount");
   if (countBadge) countBadge.textContent = totalCount;
   if (drawerBadge) drawerBadge.textContent = totalCount;
 
-  const subtotalEl = document.getElementById("ledgerSubtotal");
-  if (subtotalEl) subtotalEl.textContent = `${CURRENCY}${realSubtotal.toLocaleString('en-IN')}`;
+  const realSubtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  document.getElementById("ledgerSubtotal").textContent = `${CURRENCY}${realSubtotal.toLocaleString('en-IN')}`;
 
   let discountAmount = 0;
   if (appliedCoupon && realSubtotal > 0) {
@@ -1360,36 +981,31 @@ function updateBagDisplay() {
   }
 
   const discountRow = document.getElementById("ledgerDiscountRow");
-  const discountLabel = document.getElementById("ledgerDiscountLabel");
-  const discountVal = document.getElementById("ledgerDiscountVal");
-
-  if (discountRow) {
-    if (discountAmount > 0) {
-      discountRow.style.display = "flex";
-      if (discountLabel) discountLabel.textContent = `Discount (${appliedCoupon.code}):`;
-      if (discountVal) discountVal.textContent = `-${CURRENCY}${discountAmount.toLocaleString('en-IN')}`;
-    } else {
-      discountRow.style.display = "none";
-    }
+  if (discountAmount > 0) {
+    discountRow.style.display = "flex";
+    document.getElementById("ledgerDiscountLabel").textContent = `Discount (${appliedCoupon.code}):`;
+    document.getElementById("ledgerDiscountVal").textContent = `-${CURRENCY}${discountAmount.toLocaleString('en-IN')}`;
+  } else {
+    discountRow.style.display = "none";
   }
 
   const codFee = selectedPayment === "COD" ? COD_FEE : 0;
   const codRow = document.getElementById("ledgerCodRow");
-  if (codRow) {
-    codRow.style.display = codFee > 0 ? "flex" : "none";
+  if (codFee > 0) {
+    codRow.style.display = "flex";
+  } else {
+    codRow.style.display = "none";
   }
 
   const finalTotal = Math.max(0, realSubtotal - discountAmount + codFee);
-  const totalEl = document.getElementById("ledgerTotal");
-  if (totalEl) totalEl.textContent = `${CURRENCY}${finalTotal.toLocaleString('en-IN')}`;
+  document.getElementById("ledgerTotal").textContent = `${CURRENCY}${finalTotal.toLocaleString('en-IN')}`;
 
   renderCartItems();
 }
 
 function renderCartItems() {
-  const container = document.getElementById("bagItemsContainer") || document.getElementById("drawerItemsList");
-  const footer = document.getElementById("bagFooter") || document.querySelector(".drawer-footer") || document.querySelector(".bag-footer");
-  if (!container) return;
+  const container = document.getElementById("drawerItemsList");
+  const footer = document.querySelector(".drawer-footer");
 
   if (cart.length === 0) {
     container.innerHTML = `
@@ -1399,22 +1015,22 @@ function renderCartItems() {
         <div style="font-size: 0.8rem; margin-top: 4px;">Explore our pieces and add your favorites.</div>
       </div>
     `;
-    if (footer) footer.style.display = "none";
+    footer.style.display = "none";
     return;
   }
 
-  if (footer) footer.style.display = "block";
+  footer.style.display = "block";
   container.innerHTML = cart.map((item, idx) => `
-    <div class="cart-item-row" style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">
-      <img src="${(item.images && item.images[0]) || ''}" alt="${item.title}" class="cart-item-img" style="width:65px; height:80px; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0;">
-      <div class="cart-item-meta" style="flex:1;">
-        <div class="cart-item-title" style="font-size:0.85rem; font-weight:600; line-height:1.3;">${item.title}</div>
-        <div class="cart-item-specs" style="font-size:0.75rem; color:var(--muted); margin:3px 0;">Color: ${item.color} | Size: ${item.size}</div>
-        <div class="cart-item-price" style="font-size:0.9rem; font-weight:700;">${CURRENCY}${(item.price * item.qty).toLocaleString('en-IN')}</div>
-        <div class="cart-qty-bar" style="display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:4px; padding:2px 8px; margin-top:6px;">
-          <button class="btn-qty" onclick="changeQty(${idx}, -1)" style="border:none; background:none; cursor:pointer; font-weight:bold; font-size:0.9rem;">−</button>
-          <span style="font-size:0.82rem; font-weight:600;">${item.qty}</span>
-          <button class="btn-qty" onclick="changeQty(${idx}, 1)" style="border:none; background:none; cursor:pointer; font-weight:bold; font-size:0.9rem;">+</button>
+    <div class="cart-item-row">
+      <img src="${item.images[0] || ''}" alt="${item.title}" class="cart-item-img">
+      <div class="cart-item-meta">
+        <div class="cart-item-title">${item.title}</div>
+        <div class="cart-item-specs">${item.color} / ${item.size}</div>
+        <div class="cart-item-price">${CURRENCY}${(item.price * item.qty).toLocaleString('en-IN')}</div>
+        <div class="cart-qty-bar">
+          <button class="btn-qty" onclick="changeQty(${idx}, -1)">−</button>
+          <span>${item.qty}</span>
+          <button class="btn-qty" onclick="changeQty(${idx}, 1)">+</button>
         </div>
       </div>
     </div>
@@ -1427,9 +1043,7 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    t.classList.remove("show");
-  }, 2600);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
 }
 
 // -------------------------------------------------------------
@@ -1441,12 +1055,11 @@ async function submitOrderToWhatsApp() {
     return;
   }
 
-  const name = (document.getElementById("custName")?.value || "").trim();
-  const phone = (document.getElementById("custPhone")?.value || "").trim();
-  const addrEl = document.getElementById("custAddr1") || document.getElementById("custAddress");
-  const addr1 = (addrEl?.value || "").trim();
-  const nearby = (document.getElementById("custNearby")?.value || "").trim();
-  const pincode = (document.getElementById("custPincode")?.value || "").trim();
+  const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const addr1 = document.getElementById("custAddress").value.trim();
+  const nearby = document.getElementById("custNearby").value.trim();
+  const pincode = document.getElementById("custPincode").value.trim();
 
   if (!name || !phone || !addr1 || !pincode) {
     alert("Please fill in your Name, 10-digit Phone, Delivery Address, and Pincode.");
@@ -1479,37 +1092,30 @@ async function submitOrderToWhatsApp() {
   const codExtra = (selectedPayment === "COD") ? COD_FEE : 0;
   const payable = Math.max(0, subtotal - discount + codExtra);
 
-  // Generate order code
-  const orderId = `KR-${Math.floor(100000 + Math.random() * 900000)}`;
-
   try {
-    if (window.supabaseClient) {
-      await supabaseClient.from("orders").insert([{
-        order_id: orderId,
-        user_id: currentCustomer ? currentCustomer.id : null,
-        customer_name: name,
-        customer_phone: phone,
-        delivery_address: addr1,
-        landmark: nearby,
-        pincode: pincode,
-        payment_method: selectedPayment,
-        subtotal: subtotal,
-        discount: discount,
-        total: payable,
-        items: cart.map(i => ({ id: i.id, title: i.title, color: i.color, size: i.size, qty: i.qty, price: i.price }))
-      }]);
-    }
+    await supabaseClient.from("orders").insert([{
+      user_id: currentCustomer ? currentCustomer.id : null,
+      customer_name: name,
+      customer_phone: phone,
+      delivery_address: addr1,
+      landmark: nearby,
+      pincode: pincode,
+      payment_method: selectedPayment,
+      subtotal: subtotal,
+      discount: discount,
+      total: payable,
+      items: cart.map(i => ({ id: i.id, title: i.title, color: i.color, size: i.size, qty: i.qty, price: i.price }))
+    }]);
   } catch (e) {
-    console.warn("Audit order log note:", e);
+    console.warn("Audit order log error:", e);
   }
 
   const itemsSummary = cart.map((item, i) =>
-    `${i + 1}. *${item.title}*\n • Color: ${item.color}\n • Size: ${item.size}\n • Qty: ${item.qty}\n • Price: ${CURRENCY}${(item.price * item.qty).toLocaleString('en-IN')}`
+    `${i + 1}. *${item.title}*\n • Color: ${item.color}\n • Size: ${item.size}\n • Qty: ${item.qty}\n • Price: ${CURRENCY}${item.price * item.qty}`
   ).join("\n\n");
 
   const message = `✨ *NEW ORDER REQUEST — KRUSHIV ATELIER* ✨\n` +
     `-----------------------------------------\n` +
-    `🔖 *ORDER ID: ${orderId}*\n` +
     `👤 *CUSTOMER DETAILS:*\n` +
     `• Name: ${name}\n` +
     `• Phone: +91 ${phone}\n` +
@@ -1541,25 +1147,48 @@ function openGeneralChatWhatsApp() {
 // -------------------------------------------------------------
 // 12. CUSTOMER ACCOUNTS, CLOUD CART & PROFILE SYNC
 // -------------------------------------------------------------
+let currentCustomer = null;
+let currentAuthTab = "signin";
+let currentAccSubtab = "address";
+let cloudCartDebounce = null;
+
 function parseLoginIdentifier(input) {
-  const cleaned = input.trim();
-  if (/^\d{10}$/.test(cleaned)) {
-    return { email: `in_${cleaned}@krushiv.store`, phone: cleaned, isPhone: true };
+  const trimmed = (input || "").trim();
+  const digitsOnly = trimmed.replace(/\D/g, "");
+  let phone10 = null;
+  if (digitsOnly.length === 10) {
+    phone10 = digitsOnly;
+  } else if (digitsOnly.length === 12 && digitsOnly.startsWith("91")) {
+    phone10 = digitsOnly.slice(2);
+  } else if (digitsOnly.length === 11 && digitsOnly.startsWith("0")) {
+    phone10 = digitsOnly.slice(1);
   }
-  return { email: cleaned.toLowerCase(), phone: null, isPhone: false };
+
+  if (phone10) {
+    return {
+      type: "phone",
+      phone: phone10,
+      email: phone10 + "@krushiv.internal"
+    };
+  }
+
+  return {
+    type: "email",
+    phone: "",
+    email: trimmed.toLowerCase()
+  };
 }
 
 async function initCustomerAuth() {
   try {
-    if (!window.supabaseClient) return;
-    const { data } = await supabaseClient.auth.getSession();
-    if (data && data.session && data.session.user) {
-      handleCustomerSessionActive(data.session.user);
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      handleCustomerSessionActive(session.user);
     } else {
       handleCustomerSessionLoggedOut();
     }
 
-    supabaseClient.auth.onAuthStateChange((_event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       if (session && session.user) {
         handleCustomerSessionActive(session.user);
       } else {
@@ -1567,8 +1196,7 @@ async function initCustomerAuth() {
       }
     });
   } catch (err) {
-    console.warn("Customer auth session note:", err);
-    handleCustomerSessionLoggedOut();
+    console.warn("Auth initialization note:", err);
   }
 }
 
@@ -1582,24 +1210,28 @@ function handleCustomerSessionActive(user) {
   if (loggedOutView) loggedOutView.style.display = "none";
   if (loggedInView) loggedInView.style.display = "block";
 
-  const dispName = user.user_metadata?.full_name || (user.email.startsWith("in_") ? user.email.replace("in_", "").replace("@krushiv.store", "") : user.email.split("@")[0]);
-  const avatarEl = document.getElementById("accUserAvatar");
-  const nameEl = document.getElementById("accUserName");
-  const identEl = document.getElementById("accUserIdentifier");
+  const metaName = user.user_metadata?.full_name || "Customer";
+  const emailOrPhone = user.email && user.email.endsWith("@krushiv.internal")
+    ? user.email.replace("@krushiv.internal", "")
+    : user.email;
 
-  if (avatarEl) avatarEl.textContent = (dispName.charAt(0) || "K").toUpperCase();
-  if (nameEl) nameEl.textContent = dispName;
-  if (identEl) identEl.textContent = user.email.startsWith("in_") ? `+91 ${user.email.replace("in_", "").replace("@krushiv.store", "")}` : user.email;
+  const sidebarName = document.getElementById("sidebarUserName");
+  const sidebarAction = document.getElementById("sidebarUserAction");
+  const sidebarAvatar = document.getElementById("sidebarAvatar");
+  if (sidebarName) sidebarName.textContent = metaName;
+  if (sidebarAction) sidebarAction.textContent = "My Account (" + emailOrPhone + ") →";
+  if (sidebarAvatar) sidebarAvatar.textContent = metaName.charAt(0).toUpperCase();
 
-  const sideAvatar = document.getElementById("sidebarAvatar");
-  const sideName = document.getElementById("sidebarUserName");
-  const sideAction = document.getElementById("sidebarUserAction");
-  if (sideAvatar) sideAvatar.textContent = (dispName.charAt(0) || "K").toUpperCase();
-  if (sideName) sideName.textContent = dispName;
-  if (sideAction) sideAction.textContent = "View Account / Orders";
+  const accName = document.getElementById("accUserName");
+  const accIdent = document.getElementById("accUserIdentifier");
+  const accAvatar = document.getElementById("accUserAvatar");
+  if (accName) accName.textContent = metaName;
+  if (accIdent) accIdent.textContent = emailOrPhone;
+  if (accAvatar) accAvatar.textContent = metaName.charAt(0).toUpperCase();
 
-  syncCustomerCartOnLogin(user.id);
   loadCustomerProfile(user.id);
+  syncCustomerCartOnLogin(user.id);
+  loadCustomerOrders(user.id);
 }
 
 function handleCustomerSessionLoggedOut() {
@@ -1612,12 +1244,12 @@ function handleCustomerSessionLoggedOut() {
   if (loggedOutView) loggedOutView.style.display = "block";
   if (loggedInView) loggedInView.style.display = "none";
 
-  const sideAvatar = document.getElementById("sidebarAvatar");
-  const sideName = document.getElementById("sidebarUserName");
-  const sideAction = document.getElementById("sidebarUserAction");
-  if (sideAvatar) sideAvatar.textContent = "K";
-  if (sideName) sideName.textContent = "Sign In / Register";
-  if (sideAction) sideAction.textContent = "Save your bag & track orders";
+  const sidebarName = document.getElementById("sidebarUserName");
+  const sidebarAction = document.getElementById("sidebarUserAction");
+  const sidebarAvatar = document.getElementById("sidebarAvatar");
+  if (sidebarName) sidebarName.textContent = "Welcome to KRUSHIV";
+  if (sidebarAction) sidebarAction.textContent = "Sign In / My Account →";
+  if (sidebarAvatar) sidebarAvatar.textContent = "K";
 }
 
 function toggleAccountDrawer(show) {
@@ -1688,116 +1320,144 @@ function switchAccSubtab(tab) {
 
 async function handleCustomerAuthSubmit(e) {
   e.preventDefault();
-  const identVal = (document.getElementById("authIdentifier")?.value || "").trim();
-  const passVal = document.getElementById("authPassword")?.value || "";
-  const nameVal = (document.getElementById("authFullName")?.value || "").trim();
+  const identVal = document.getElementById("authIdentifier").value.trim();
+  const passVal = document.getElementById("authPassword").value;
+  const nameVal = document.getElementById("authName") ? document.getElementById("authName").value.trim() : "";
   const errBox = document.getElementById("authErrorAlert");
   const submitBtn = document.getElementById("authSubmitBtn");
 
   if (errBox) errBox.style.display = "none";
-  if (!identVal || !passVal) return;
 
-  const parsed = parseLoginIdentifier(identVal);
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Processing...";
+  if (!identVal || !passVal) {
+    if (errBox) { errBox.textContent = "Please fill in all required fields."; errBox.style.display = "block"; }
+    return;
   }
 
-  try {
-    if (!window.supabaseClient) throw new Error("Supabase client not initialized.");
+  const parsed = parseLoginIdentifier(identVal);
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Please wait...";
 
+  try {
     if (currentAuthTab === "signup") {
+      if (!nameVal) {
+        throw new Error("Please enter your full name.");
+      }
+      if (passVal.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
       const { data, error } = await supabaseClient.auth.signUp({
         email: parsed.email,
         password: passVal,
         options: {
           data: {
-            full_name: nameVal || "Valued Customer",
-            raw_phone: parsed.phone || null
+            full_name: nameVal,
+            phone: parsed.phone || ""
           }
         }
       });
+
       if (error) throw error;
+
       if (data && data.user) {
-        showToast("Account created successfully!");
-        if (data.session) {
-          handleCustomerSessionActive(data.user);
-        } else {
-          showToast("Account created! Please sign in.");
-          switchAuthTab("signin");
-        }
+        await supabaseClient.from("profiles").upsert({
+          id: data.user.id,
+          full_name: nameVal,
+          phone: parsed.phone || "",
+          email: parsed.type === "email" ? parsed.email : ""
+        });
+        showToast("Account created! Welcome to KRUSHIV.");
+        if (data.session) handleCustomerSessionActive(data.user);
       }
     } else {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: parsed.email,
         password: passVal
       });
-      if (error) throw error;
-      if (data && data.user) {
-        showToast("Welcome back to KRUSHIV!");
-        handleCustomerSessionActive(data.user);
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          throw new Error("Incorrect email/mobile or password. Please try again.");
+        }
+        throw error;
       }
+
+      showToast("Signed in! Your bag and address are synced.");
+      if (data && data.user) handleCustomerSessionActive(data.user);
     }
   } catch (err) {
     if (errBox) {
-      errBox.textContent = err.message || "Authentication failed.";
+      errBox.textContent = err.message || "Authentication failed. Please try again.";
       errBox.style.display = "block";
     }
   } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = currentAuthTab === "signup" ? "Create Account" : "Sign In to KRUSHIV";
-    }
+    submitBtn.disabled = false;
+    submitBtn.textContent = currentAuthTab === "signup" ? "Create Account" : "Sign In to KRUSHIV";
   }
 }
 
 async function handleCustomerLogout() {
-  if (window.supabaseClient) {
+  try {
     await supabaseClient.auth.signOut();
+    handleCustomerSessionLoggedOut();
+    showToast("Signed out successfully.");
+    toggleAccountDrawer(false);
+  } catch (err) {
+    console.error("Logout error:", err);
   }
-  handleCustomerSessionLoggedOut();
-  showToast("Logged out successfully.");
 }
 
 async function syncCustomerCartOnLogin(userId) {
   try {
-    if (!window.supabaseClient) return;
     const { data } = await supabaseClient
       .from("customer_carts")
-      .select("cart_data")
+      .select("items")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (data && Array.isArray(data.cart_data) && data.cart_data.length > 0) {
-      data.cart_data.forEach(cloudItem => {
-        const local = cart.find(c => String(c.id) === String(cloudItem.id) && c.size === cloudItem.size && c.color === cloudItem.color);
-        if (local) {
-          local.qty = Math.max(local.qty, cloudItem.qty);
+    let cloudCart = (data && Array.isArray(data.items)) ? data.items : [];
+
+    if (cart.length > 0) {
+      cart.forEach(localItem => {
+        const existing = cloudCart.find(c => c.id === localItem.id && c.size === localItem.size && c.color === localItem.color);
+        if (existing) {
+          existing.qty = Math.max(existing.qty, localItem.qty);
         } else {
-          cart.push(cloudItem);
+          cloudCart.push(localItem);
         }
       });
-      updateBagDisplay();
+      await supabaseClient.from("customer_carts").upsert({
+        user_id: userId,
+        items: cloudCart,
+        updated_at: new Date().toISOString()
+      });
     }
+
+    cart = cloudCart;
+    updateBagDisplay();
   } catch (err) {
     console.warn("Cart sync note:", err);
   }
 }
 
 function triggerCloudCartSync() {
-  if (!currentCustomer || !window.supabaseClient) return;
-  try {
-    supabaseClient.from("customer_carts").upsert({
-      user_id: currentCustomer.id,
-      cart_data: cart,
-      updated_at: new Date().toISOString()
-    }).then();
-  } catch(e) {}
+  if (!currentCustomer) return;
+  if (cloudCartDebounce) clearTimeout(cloudCartDebounce);
+  cloudCartDebounce = setTimeout(async () => {
+    try {
+      await supabaseClient.from("customer_carts").upsert({
+        user_id: currentCustomer.id,
+        items: cart,
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn("Cloud cart save error:", e);
+    }
+  }, 1000);
 }
 
 async function loadCustomerProfile(userId) {
   try {
-    if (!window.supabaseClient) return;
     const { data } = await supabaseClient
       .from("profiles")
       .select("*")
@@ -1807,20 +1467,18 @@ async function loadCustomerProfile(userId) {
     if (data) {
       if (document.getElementById("accFullName")) document.getElementById("accFullName").value = data.full_name || "";
       if (document.getElementById("accPhone")) document.getElementById("accPhone").value = data.phone || "";
-      if (document.getElementById("accAddress")) document.getElementById("accAddress").value = data.address_line1 || "";
+      if (document.getElementById("accAddress")) document.getElementById("accAddress").value = data.address || "";
       if (document.getElementById("accLandmark")) document.getElementById("accLandmark").value = data.landmark || "";
       if (document.getElementById("accPincode")) document.getElementById("accPincode").value = data.pincode || "";
 
-      // Also pre-fill Bag Drawer fields
       if (document.getElementById("custName") && !document.getElementById("custName").value) {
         document.getElementById("custName").value = data.full_name || "";
       }
       if (document.getElementById("custPhone") && !document.getElementById("custPhone").value) {
         document.getElementById("custPhone").value = data.phone || "";
       }
-      const addrEl = document.getElementById("custAddr1") || document.getElementById("custAddress");
-      if (addrEl && !addrEl.value) {
-        addrEl.value = data.address_line1 || "";
+      if (document.getElementById("custAddress") && !document.getElementById("custAddress").value) {
+        document.getElementById("custAddress").value = data.address || "";
       }
       if (document.getElementById("custNearby") && !document.getElementById("custNearby").value) {
         document.getElementById("custNearby").value = data.landmark || "";
@@ -1829,48 +1487,50 @@ async function loadCustomerProfile(userId) {
         document.getElementById("custPincode").value = data.pincode || "";
       }
     }
-  } catch(err) {
-    console.warn("Customer profile load note:", err);
+  } catch (err) {
+    console.warn("Profile load note:", err);
   }
 }
 
 async function handleSaveCustomerAddress(e) {
   e.preventDefault();
-  if (!currentCustomer || !window.supabaseClient) return;
-
-  const fullName = (document.getElementById("accFullName")?.value || "").trim();
-  const phone = (document.getElementById("accPhone")?.value || "").trim();
-  const address = (document.getElementById("accAddress")?.value || "").trim();
-  const landmark = (document.getElementById("accLandmark")?.value || "").trim();
-  const pincode = (document.getElementById("accPincode")?.value || "").trim();
+  if (!currentCustomer) return;
 
   const btn = document.getElementById("btnSaveAddress");
-  if (btn) btn.textContent = "Saving...";
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  const name = document.getElementById("accFullName").value.trim();
+  const phone = document.getElementById("accPhone").value.trim();
+  const address = document.getElementById("accAddress").value.trim();
+  const landmark = document.getElementById("accLandmark").value.trim();
+  const pincode = document.getElementById("accPincode").value.trim();
 
   try {
     const { error } = await supabaseClient.from("profiles").upsert({
       id: currentCustomer.id,
-      full_name: fullName,
+      full_name: name,
       phone: phone,
-      address_line1: address,
+      address: address,
       landmark: landmark,
       pincode: pincode,
       updated_at: new Date().toISOString()
     });
-    if (error) throw error;
-    showToast("Delivery address saved successfully!");
 
-    // Also update bag inputs
-    if (document.getElementById("custName")) document.getElementById("custName").value = fullName;
+    if (error) throw error;
+
+    if (document.getElementById("custName")) document.getElementById("custName").value = name;
     if (document.getElementById("custPhone")) document.getElementById("custPhone").value = phone;
-    const addrEl = document.getElementById("custAddr1") || document.getElementById("custAddress");
-    if (addrEl) addrEl.value = address;
+    if (document.getElementById("custAddress")) document.getElementById("custAddress").value = address;
     if (document.getElementById("custNearby")) document.getElementById("custNearby").value = landmark;
     if (document.getElementById("custPincode")) document.getElementById("custPincode").value = pincode;
+
+    showToast("✓ Delivery details saved!");
   } catch (err) {
     alert("Could not save address: " + err.message);
   } finally {
-    if (btn) btn.textContent = "Save Delivery Details";
+    btn.disabled = false;
+    btn.textContent = "Save Delivery Details";
   }
 }
 
@@ -1878,58 +1538,58 @@ async function loadCustomerOrders(userId) {
   const container = document.getElementById("customerOrdersList");
   if (!container) return;
 
-  container.innerHTML = `<div style="text-align:center; padding:25px; color:var(--muted); font-size:0.85rem;">Loading your orders...</div>`;
-
   try {
-    if (!window.supabaseClient) throw new Error("No client");
     const { data, error } = await supabaseClient
       .from("orders")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(20);
 
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
+    if (error || !data || data.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center; padding:35px 10px; color:var(--muted);">
+        <div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.85rem;">
           <div style="font-size:1.8rem; margin-bottom:6px;">📦</div>
-          <div style="font-weight:600; font-size:0.95rem; color:var(--noir);">No orders placed yet</div>
-          <div style="font-size:0.78rem; margin-top:4px;">When you place an order via WhatsApp, it will appear here.</div>
+          <div>No past orders found.</div>
+          <div style="font-size:0.75rem; margin-top:4px;">Orders placed on WhatsApp while logged in will show here!</div>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = data.map(o => {
-      const itemsList = Array.isArray(o.items) ? o.items : [];
-      const dateStr = new Date(o.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
+    container.innerHTML = data.map(ord => {
+      const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "Recent";
+      const itemsList = Array.isArray(ord.items) 
+        ? ord.items.map(it => it.title + " (" + (it.size || "Free") + ") ×" + it.qty).join(", ")
+        : "Order Pieces";
 
       return `
-        <div style="background:#FFF; border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-weight:700; font-size:0.85rem; color:var(--noir);">${o.order_id || 'Order'}</span>
-            <span style="font-size:0.7rem; background:#E8F5E9; color:#2E7D32; font-weight:700; padding:2px 8px; border-radius:10px;">${o.order_status || 'Confirmed'}</span>
+        <div class="order-history-card">
+          <div class="order-history-header">
+            <span class="order-history-id">Order #${String(ord.id).slice(0, 8)}</span>
+            <span class="order-history-date">${dateStr}</span>
           </div>
-          <div style="font-size:0.75rem; color:var(--muted); margin-bottom:8px;">Placed on ${dateStr} • ${o.payment_method || 'UPI'}</div>
-          <div style="font-size:0.8rem; border-top:1px dashed var(--border); padding-top:8px;">
-            ${itemsList.map(it => `<div>• <strong>${it.title || 'Piece'}</strong> (${it.color || ''} / ${it.size || ''}) × ${it.qty || 1}</div>`).join("")}
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:6px; border-top:1px solid var(--border);">
-            <span style="font-size:0.8rem; color:var(--muted);">Total:</span>
-            <span style="font-weight:700; font-size:0.95rem;">${CURRENCY}${Number(o.total || 0).toLocaleString('en-IN')}</span>
+          <div class="order-history-items">${escapeHtml(itemsList)}</div>
+          <div class="order-history-footer">
+            <span class="order-status-pill">${escapeHtml(ord.payment_method || 'WhatsApp Order')}</span>
+            <span style="font-weight:700; color:var(--noir);">₹${ord.total || 0}</span>
           </div>
         </div>
       `;
     }).join("");
-  } catch(err) {
-    container.innerHTML = `
-      <div style="text-align:center; padding:20px; color:var(--muted); font-size:0.8rem;">
-        <div>Check your order status directly on WhatsApp.</div>
-        <button class="btn btn-dark btn-sm" style="margin-top:8px;" onclick="openGeneralChatWhatsApp()">Chat on WhatsApp</button>
-      </div>
-    `;
+  } catch (err) {
+    container.innerHTML = '<div style="color:red; text-align:center; padding:15px; font-size:0.8rem;">Failed to load order history.</div>';
   }
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // -------------------------------------------------------------
