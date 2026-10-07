@@ -18,10 +18,7 @@
 
 <!-- 1. TOP OFFER BANNER -->
 <div class="top-bar">
-  <span id="topBarContent">Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off</span>
-  <span id="countdownTimerContainer" class="countdown-timer-container">
-    ⏳ Sale Ends in: <span id="timerHours">00</span>h <span id="timerMinutes">00</span>m <span id="timerSeconds">00</span>s
-  </span>
+Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
 </div>
 
 <!-- 2. STICKY HEADER WITH LOGO IMAGE & LUCIDE ICONS -->
@@ -160,7 +157,6 @@ style="height: 32px; width: auto; object-fit: contain;"
 Enter your 10-digit mobile number or order code below to check instant live tracking updates directly on WhatsApp.
 </p>
 <input type="text" id="trackInput" class="cust-field" placeholder="Enter Mobile Number or Order Code" style="margin-bottom: 12px; width: 100%;" />
-<div id="trackResult" style="margin-bottom: 10px;"></div>
 <button class="btn-wa-order" onclick="submitTrackingInquiry()">
 <i data-lucide="truck" style="width: 18px; height: 18px;"></i>
 <span>Track on WhatsApp</span>
@@ -425,7 +421,7 @@ SHOPPING BAG / WHATSAPP CHECKOUT DRAWER
 <input type="text" id="couponInput" class="coupon-box-input" placeholder="e.g. FESTIVE20" />
 <button class="btn-apply" onclick="applyCoupon()">Apply</button>
 </div>
-<div class="pills-group" id="quickCouponsList"></div>
+<div class="pills-group"></div>
 <div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px; font-weight: 600;"></div>
 </div>
 
@@ -670,4 +666,3 @@ Order on WhatsApp
 <script src="/js/store.js"></script>
 </body>
 </html>
-
