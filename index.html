@@ -18,7 +18,10 @@
 
 <!-- 1. TOP OFFER BANNER -->
 <div class="top-bar">
-Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off
+  <span id="topBarContent">Festive Pret Collection • <strong>Easy Doorstep Exchange</strong> • Use Code <strong>FESTIVE20</strong> for 20% Off</span>
+  <span id="countdownTimerContainer" class="countdown-timer-container">
+    ⏳ Sale Ends in: <span id="timerHours">00</span>h <span id="timerMinutes">00</span>m <span id="timerSeconds">00</span>s
+  </span>
 </div>
 
 <!-- 2. STICKY HEADER WITH LOGO IMAGE & LUCIDE ICONS -->
@@ -38,12 +41,11 @@ style="height: 38px; width: auto; object-fit: contain; display: block;"
 <span class="bag-badge-pill" id="headerBagCount">0</span>
 </button>
 
-
- <!-- 2. Profile Icon -->
-      <button class="header-icon-btn" onclick="toggleAccountDrawer(true)" aria-label="My Account" id="headerProfileBtn" style="position: relative;">
-        <i data-lucide="user" style="width: 22px; height: 22px;"></i>
-        <span class="auth-active-dot" id="headerAuthDot" style="display:none;"></span>
-      </button>
+<!-- 2. Profile Icon -->
+<button class="header-icon-btn" onclick="toggleAccountDrawer(true)" aria-label="My Account" id="headerProfileBtn" style="position: relative;">
+<i data-lucide="user" style="width: 22px; height: 22px;"></i>
+<span class="auth-active-dot" id="headerAuthDot" style="display:none;"></span>
+</button>
 
 <!-- 3. Hamburger Menu -->
 <button class="header-icon-btn" onclick="toggleSidebar(true)" aria-label="Open Mobile Menu">
@@ -59,70 +61,71 @@ style="height: 38px; width: auto; object-fit: contain; display: block;"
 <div class="sidebar-brand">
 <img
 src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEinQyEJio3FDgtzZzyV61f2RZr3avyB-bfU3PSrF1mMD8g4ZyuH4n3bR7aVWIvtSwBAEc3GkB13zM9Rqz78o7jWtoxyYhYAvJO_N3s2i784a2VEPOQvOfxi1HS_ht3Z0-q0TuQcEZh8AaJnk7akYTz2iNjKquTgqd311DnIsRTmNE6xAP3Egvk9rplK1N0k/s632/24CA3E64-D8B2-42D2-BBF8-3040FF8D367E_birefnet.png"
-alt="KRUSHIV Logo"
+alt="KRUSHIV"
 style="height: 32px; width: auto; object-fit: contain;"
 />
 </div>
-<button class="header-icon-btn" onclick="toggleSidebar(false)" aria-label="Close Sidebar">
-<i data-lucide="x" style="width: 22px; height: 22px;"></i>
+<button class="header-icon-btn" onclick="toggleSidebar(false)" aria-label="Close Menu">
+<i data-lucide="x" style="width: 20px; height: 20px;"></i>
 </button>
 </div>
 
 <div class="sidebar-content">
-<!-- Profile Card -->
-<div class="sidebar-profile-card" onclick="toggleSidebar(false); toggleAccountDrawer(true);" style="cursor: pointer;">
-        <div class="sidebar-avatar" id="sidebarAvatar">K</div>
-        <div>
-          <div class="sidebar-user-name" id="sidebarUserName">Welcome to KRUSHIV</div>
-          <div class="sidebar-user-action" id="sidebarUserAction">Sign In / My Account →</div>
-        </div>
-      </div>
+<!-- User Profile Quick Card -->
+<div class="sidebar-user-card" onclick="toggleSidebar(false); toggleAccountDrawer(true);">
+<div class="sidebar-avatar" id="sidebarAvatar">K</div>
+<div class="sidebar-user-info">
+<div class="sidebar-user-name" id="sidebarUserName">Sign In / Register</div>
+<div class="sidebar-user-action" id="sidebarUserAction">Save your bag & track orders</div>
+</div>
+<i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--muted); margin-left: auto;"></i>
+</div>
 
-<!-- Categories & Collections -->
-<div>
-<div class="sidebar-group-title">Shop by Category</div>
-<ul class="sidebar-menu-list">
+<!-- Collections -->
+<div class="sidebar-section">
+<div class="sidebar-section-title">Collections</div>
+<ul class="sidebar-menu">
 <li>
-<a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('All'); toggleSidebar(false);">
+<a href="javascript:void(0)" class="sidebar-menu-link active" onclick="setCategory('All'); toggleSidebar(false);">
 <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
 <span>All Pieces</span>
 </a>
 </li>
 <li>
-<a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Kurtas'); toggleSidebar(false);">
+<a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Kurtas'); toggleSidebar(false);">
 <i data-lucide="shirt" style="width: 18px; height: 18px;"></i>
 <span>Kurtas & Sets</span>
 </a>
 </li>
 <li>
-<a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Dresses'); toggleSidebar(false);">
+<a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Dresses'); toggleSidebar(false);">
 <i data-lucide="heart" style="width: 18px; height: 18px;"></i>
 <span>Western Dresses</span>
 </a>
 </li>
 <li>
-<a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Co-ords'); toggleSidebar(false);">
+<a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Co-ords'); toggleSidebar(false);">
 <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
 <span>Co-ord Sets</span>
 </a>
 </li>
 <li>
-<a href="javascript:void(0)" class="sidebar-menu-link" onclick="openHomeView(); setCategory('Sarees'); toggleSidebar(false);">
-<i data-lucide="feather" style="width: 18px; height: 18px;"></i>
+<a href="javascript:void(0)" class="sidebar-menu-link" onclick="setCategory('Sarees'); toggleSidebar(false);">
+<i data-lucide="gem" style="width: 18px; height: 18px;"></i>
 <span>Pure Silk & Sarees</span>
 </a>
 </li>
 </ul>
 </div>
 
-<!-- Orders & Customer Care -->
-<div>
-<div class="sidebar-group-title">Orders & Assistance</div>
-<ul class="sidebar-menu-list">
+<!-- Quick Help -->
+<div class="sidebar-section">
+<div class="sidebar-section-title">Quick Help</div>
+<ul class="sidebar-menu">
 <li>
 <a href="javascript:void(0)" class="sidebar-menu-link" onclick="openTrackModal(); toggleSidebar(false);">
-<i data-lucide="package" style="width: 18px; height: 18px;"></i>
-<span>Track My Order</span>
+<i data-lucide="truck" style="width: 18px; height: 18px;"></i>
+<span>Track Order</span>
 </a>
 </li>
 <li>
@@ -157,6 +160,7 @@ style="height: 32px; width: auto; object-fit: contain;"
 Enter your 10-digit mobile number or order code below to check instant live tracking updates directly on WhatsApp.
 </p>
 <input type="text" id="trackInput" class="cust-field" placeholder="Enter Mobile Number or Order Code" style="margin-bottom: 12px; width: 100%;" />
+<div id="trackResult" style="margin-bottom: 10px;"></div>
 <button class="btn-wa-order" onclick="submitTrackingInquiry()">
 <i data-lucide="truck" style="width: 18px; height: 18px;"></i>
 <span>Track on WhatsApp</span>
@@ -197,11 +201,10 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 
 <div class="pdp-split">
-<!-- 1. Media Gallery: 90% / 10% Peek Slider with Clickable Dots -->
+<!-- 1. Media Gallery: Peek Slider with Clickable Dots -->
 <div class="pdp-media-pane">
 <div class="pdp-peek-slider-wrapper">
 <div class="pdp-peek-slider" id="pdpPeekSlider"></div>
-<!-- B5. CLICKABLE SLIDER DOTS -->
 <div class="pdp-slider-dots" id="pdpSliderDots"></div>
 </div>
 </div>
@@ -230,11 +233,11 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 <div class="color-swatches" id="pdpColorsGroup"></div>
 </div>
 
-<!-- Size Selector: S, M, L, XL, XXL, 3XL with Stock Detection -->
+<!-- Size Selector -->
 <div class="section-label">Select Size:</div>
 <div class="sizes-flex" id="pdpSizesGroup"></div>
 
-<!-- B6. DESKTOP ONLY INLINE BUTTONS (REMOVED FROM MOBILE VIEW) -->
+<!-- Desktop Inline Actions -->
 <div class="pdp-desktop-actions-row">
 <button class="btn-action-bag" onclick="addCurrentPdp(false)">
 🛍️ Add to Bag
@@ -244,7 +247,7 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </button>
 </div>
 
-<!-- 3. CIRCULAR PINK TRUST BADGES -->
+<!-- Trust Badges Strip -->
 <div class="trust-badges-strip">
 <div class="trust-badge-item">
 <div class="trust-badge-circle"><i data-lucide="package" style="width: 22px; height: 22px;"></i></div>
@@ -264,7 +267,7 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 </div>
 
-<!-- 4. ACCORDIONS -->
+<!-- Accordions -->
 <div class="accordion-group">
 <div class="accordion-box">
 <div class="accordion-header" onclick="togglePdpAccordion(this)">
@@ -285,14 +288,14 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 <ul class="spec-list">
 <li><span class="spec-bullet">✓</span> Dispatches within 24 business hours from our atelier.</li>
 <li><span class="spec-bullet">✓</span> Free express shipping across India on all prepaid orders.</li>
-<li><span class="spec-bullet">✓</span> <strong>Doorstep Exchange Available:</strong> If you need a size or color swap, we arrange hassle-free doorstep pickup.</li>
-<li><span class="spec-bullet">✓</span> Cash on Delivery (COD) available with a ₹50 courier convenience fee.</li>
+<li><span class="spec-bullet">✓</span> <strong>Doorstep Exchange Available:</strong> We arrange reverse courier pickup for easy size swaps.</li>
+<li><span class="spec-bullet">✓</span> Cash on Delivery (COD) available with a standard ₹50 fee.</li>
 </ul>
 </div>
 </div>
 </div>
 
-<!-- REVIEWS CAROUSEL -->
+<!-- Reviews Marquee -->
 <div class="reviews-section">
 <div class="reviews-header">
 <span>Customer Reviews</span>
@@ -303,7 +306,7 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 </div>
 
-<!-- SIMILAR PRODUCTS SECTION -->
+<!-- Similar Products -->
 <div class="similar-section">
 <h3 class="similar-title">You May Also Like</h3>
 <div class="similar-grid" id="similarGrid"></div>
@@ -313,7 +316,7 @@ VIEW 2: DEDICATED PRODUCT DETAILS PAGE (PDP)
 </div>
 </div>
 
-<!-- B6. STICKY BOTTOM BAR (ACTIVE ON MOBILE PDP ONLY) -->
+<!-- Sticky Bottom Bar (Mobile PDP) -->
 <div class="pdp-sticky-bar">
 <button class="btn-sticky-bag" onclick="addCurrentPdp(false)">
 🛍️ Add to Bag
@@ -377,7 +380,7 @@ Redefining contemporary women's couture and festive pret. Handcrafted breathable
 
 <div class="footer-payment-strip">
 <div class="copyright-text">
-© 2026 KRUSHIV ATELIER. All rights reserved. Designed for mobile-first shopping.
+© 2026 KRUSHIV ATELIER. All rights reserved.
 </div>
 <div class="footer-pay-badges">
 <span class="footer-badge">UPI</span>
@@ -389,9 +392,7 @@ Redefining contemporary women's couture and festive pret. Handcrafted breathable
 </div>
 </footer>
 
-<!-- =========================================
-LEGAL / POLICY POPUP MODAL
-========================================== -->
+<!-- Legal Modal -->
 <div class="legal-modal-overlay" id="legalModal" onclick="closeLegalModal(event)">
 <div class="legal-modal-box">
 <button class="legal-modal-close" onclick="closeLegalModalDirect()">&times;</button>
@@ -421,7 +422,7 @@ SHOPPING BAG / WHATSAPP CHECKOUT DRAWER
 <input type="text" id="couponInput" class="coupon-box-input" placeholder="e.g. FESTIVE20" />
 <button class="btn-apply" onclick="applyCoupon()">Apply</button>
 </div>
-<div class="pills-group"></div>
+<div class="pills-group" id="quickCouponsList"></div>
 <div id="couponStatus" style="font-size: 0.72rem; margin-top: 4px; font-weight: 600;"></div>
 </div>
 
@@ -455,8 +456,8 @@ oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
 </div>
 
 <div class="payment-section">
-<div class="form-heading">2. Select Payment Method</div>
-<div class="payment-options-row">
+<div class="form-heading">2. Payment Method</div>
+<div class="pay-options">
 <label class="payment-card active" id="payCardUpi" onclick="selectPaymentMethod('UPI')">
 <input type="radio" name="payMethod" value="UPI" checked class="payment-radio" />
 <div class="payment-card-body">
@@ -517,148 +518,121 @@ Order on WhatsApp
 </div>
 </aside>
 
-<!-- A3. FLOATING CHAT BUTTON (DYNAMIC POSITIONING VIA CSS) -->
-<a href="javascript:void(0)" onclick="openGeneralChatWhatsApp()" class="floating-chat-btn" aria-label="Chat on WhatsApp">
-<i data-lucide="message-circle" style="width: 20px; height: 20px;"></i>
-<span>Chat with Us</span>
-</a>
+<!-- Account Drawer -->
+<div class="account-overlay" id="accountOverlay" onclick="toggleAccountDrawer(false)"></div>
+<aside class="account-drawer" id="accountDrawer">
+<div class="account-drawer-header">
+<h3 class="account-drawer-title" id="accountDrawerTitle">Customer Account</h3>
+<button class="header-icon-btn" onclick="toggleAccountDrawer(false)" aria-label="Close Account">
+<i data-lucide="x" style="width: 20px; height: 20px;"></i>
+</button>
+</div>
 
-   <!-- 5. ACCOUNT / SIGN IN & SIGN UP DRAWER -->
-  <div class="account-overlay" id="accountOverlay" onclick="toggleAccountDrawer(false)"></div>
-  <aside class="account-drawer" id="accountDrawer">
-    <div class="account-drawer-header">
-      <div class="account-drawer-title" id="accountDrawerTitle">My Account</div>
-      <button class="header-icon-btn" onclick="toggleAccountDrawer(false)" aria-label="Close Account Drawer">
-        <i data-lucide="x" style="width: 22px; height: 22px;"></i>
-      </button>
-    </div>
+<div class="account-drawer-body">
+<div id="authLoggedOutView">
+<p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 16px;">
+Sign in or create an account with your mobile number or email to save your cart & track previous orders.
+</p>
+<div class="auth-tabs">
+<button type="button" class="auth-tab-btn active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+<button type="button" class="auth-tab-btn" id="tabSignUp" onclick="switchAuthTab('signup')">Sign Up</button>
+</div>
 
-    <div class="account-drawer-body">
-      <!-- A. LOGGED OUT: SIGN IN / SIGN UP TABS & FORM -->
-      <div id="authLoggedOutView">
-        <div class="auth-nav-tabs">
-          <button type="button" class="auth-tab-btn active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-          <button type="button" class="auth-tab-btn" id="tabSignUp" onclick="switchAuthTab('signup')">Sign Up</button>
-        </div>
+<form id="authCustomerForm" onsubmit="handleCustomerAuthSubmit(event)">
+<div class="auth-form-field" id="fieldFullName" style="display: none;">
+<label class="auth-label">Full Name *</label>
+<input type="text" id="authName" class="auth-input" placeholder="e.g. Priya Sharma" autocomplete="name" />
+</div>
 
-        <form id="authCustomerForm" onsubmit="handleCustomerAuthSubmit(event)">
-          <div class="auth-form-field" id="fieldFullName" style="display: none;">
-            <label class="auth-label">Full Name *</label>
-            <input type="text" id="authName" class="auth-input" placeholder="e.g. Priya Sharma" autocomplete="name" />
-          </div>
+<div class="auth-form-field">
+<label class="auth-label">Email or Mobile Number *</label>
+<input type="text" id="authIdentifier" class="auth-input" placeholder="e.g. 9876543210 or name@gmail.com" required autocomplete="username" />
+</div>
 
-          <div class="auth-form-field">
-            <label class="auth-label">Email or Mobile Number *</label>
-            <input type="text" id="authIdentifier" class="auth-input" placeholder="e.g. 9876543210 or name@gmail.com" required autocomplete="username" />
-          </div>
+<div class="auth-form-field">
+<label class="auth-label">Password *</label>
+<input type="password" id="authPassword" class="auth-input" placeholder="At least 6 characters" required autocomplete="current-password" />
+</div>
 
-          <div class="auth-form-field">
-            <label class="auth-label">Password *</label>
-            <input type="password" id="authPassword" class="auth-input" placeholder="At least 6 characters" required autocomplete="current-password" />
-          </div>
+<div id="authErrorAlert" class="auth-error-alert" style="display: none;"></div>
 
-          <div id="authErrorAlert" class="auth-error-alert" style="display: none;"></div>
+<button type="submit" class="btn-auth-submit" id="authSubmitBtn">
+Sign In to KRUSHIV
+</button>
+</form>
 
-          <button type="submit" class="btn-auth-submit" id="authSubmitBtn">
-            Sign In to KRUSHIV
-          </button>
-        </form>
+<div class="auth-toggle-note" id="authToggleNote">
+Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signup')">Create one now</a>
+</div>
+</div>
 
-        <div class="auth-toggle-note" id="authToggleNote">
-          Don't have an account? <a href="javascript:void(0)" onclick="switchAuthTab('signup')">Create one now</a>
-        </div>
+<div id="authLoggedInView" style="display: none;">
+<div class="account-profile-card">
+<div class="account-avatar" id="accUserAvatar">K</div>
+<div class="account-profile-info">
+<div class="account-name" id="accUserName">Customer</div>
+<div class="account-identifier" id="accUserIdentifier">Loading...</div>
+</div>
+</div>
 
-        <div class="auth-perks-box">
-          <div class="auth-perk-item">
-            <i data-lucide="shopping-bag" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>Bag automatically saves across your phone & laptop</span>
-          </div>
-          <div class="auth-perk-item">
-            <i data-lucide="map-pin" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>1-click WhatsApp checkout with saved delivery address</span>
-          </div>
-          <div class="auth-perk-item">
-            <i data-lucide="package" style="width:16px; height:16px; color:var(--accent);"></i>
-            <span>View your previous orders & tracking anytime</span>
-          </div>
-        </div>
-      </div>
+<div class="acc-subtabs">
+<button type="button" class="acc-subtab active" id="subtabAddress" onclick="switchAccSubtab('address')">
+<i data-lucide="map-pin" style="width:14px; height:14px;"></i>
+<span>Saved Address</span>
+</button>
+<button type="button" class="acc-subtab" id="subtabOrders" onclick="switchAccSubtab('orders')">
+<i data-lucide="package" style="width:14px; height:14px;"></i>
+<span>My Orders</span>
+</button>
+</div>
 
-      <!-- B. LOGGED IN: CUSTOMER PROFILE & ORDER HISTORY -->
-      <div id="authLoggedInView" style="display: none;">
-        <!-- User Badge -->
-        <div class="account-profile-card">
-          <div class="account-avatar" id="accUserAvatar">K</div>
-          <div class="account-profile-info">
-            <div class="account-name" id="accUserName">Customer</div>
-            <div class="account-identifier" id="accUserIdentifier">Loading...</div>
-          </div>
-        </div>
+<div id="accAddressPanel" class="acc-panel">
+<form onsubmit="handleSaveCustomerAddress(event)">
+<div class="auth-form-field">
+<label class="auth-label">Full Name</label>
+<input type="text" id="accFullName" class="auth-input" placeholder="Your full name" />
+</div>
+<div class="auth-form-field">
+<label class="auth-label">Phone Number (10 digits)</label>
+<input type="tel" id="accPhone" class="auth-input" maxlength="10" placeholder="e.g. 9876543210" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" />
+</div>
+<div class="auth-form-field">
+<label class="auth-label">Delivery Address (House/Street/Area)</label>
+<textarea id="accAddress" class="auth-input" rows="2" placeholder="Complete address for courier delivery"></textarea>
+</div>
+<div style="display:flex; gap:10px;">
+<div class="auth-form-field" style="flex:1;">
+<label class="auth-label">Landmark</label>
+<input type="text" id="accLandmark" class="auth-input" placeholder="Near temple, metro..." />
+</div>
+<div class="auth-form-field" style="flex:1;">
+<label class="auth-label">Pincode (6 digits)</label>
+<input type="text" id="accPincode" class="auth-input" maxlength="6" placeholder="Pincode" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)" />
+</div>
+</div>
+<button type="submit" class="btn-auth-submit" id="btnSaveAddress" style="margin-top:8px;">
+Save Delivery Details
+</button>
+</form>
+</div>
 
-        <!-- Section Navigation -->
-        <div class="acc-subtabs">
-          <button type="button" class="acc-subtab active" id="subtabAddress" onclick="switchAccSubtab('address')">
-            <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
-            <span>Saved Address</span>
-          </button>
-          <button type="button" class="acc-subtab" id="subtabOrders" onclick="switchAccSubtab('orders')">
-            <i data-lucide="package" style="width:14px; height:14px;"></i>
-            <span>My Orders</span>
-          </button>
-        </div>
+<div id="accOrdersPanel" class="acc-panel" style="display: none;">
+<div id="customerOrdersList" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+<div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.85rem;">
+Loading orders...
+</div>
+</div>
+</div>
 
-        <!-- 1. Saved Address Tab -->
-        <div id="accAddressPanel" class="acc-panel">
-          <p style="font-size:0.78rem; color:var(--muted); margin-bottom:12px;">
-            Saved delivery details will automatically pre-fill whenever you checkout via WhatsApp.
-          </p>
-          <form onsubmit="handleSaveCustomerAddress(event)">
-            <div class="auth-form-field">
-              <label class="auth-label">Full Name</label>
-              <input type="text" id="accFullName" class="auth-input" placeholder="Your full name" />
-            </div>
-            <div class="auth-form-field">
-              <label class="auth-label">Phone Number (10 digits)</label>
-              <input type="tel" id="accPhone" class="auth-input" maxlength="10" placeholder="e.g. 9876543210" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" />
-            </div>
-            <div class="auth-form-field">
-              <label class="auth-label">Delivery Address (House/Street/Area)</label>
-              <textarea id="accAddress" class="auth-input" rows="2" placeholder="Complete address for courier delivery"></textarea>
-            </div>
-            <div style="display:flex; gap:10px;">
-              <div class="auth-form-field" style="flex:1;">
-                <label class="auth-label">Landmark</label>
-                <input type="text" id="accLandmark" class="auth-input" placeholder="Near temple, metro..." />
-              </div>
-              <div class="auth-form-field" style="flex:1;">
-                <label class="auth-label">Pincode (6 digits)</label>
-                <input type="text" id="accPincode" class="auth-input" maxlength="6" placeholder="Pincode" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)" />
-              </div>
-            </div>
-            <button type="submit" class="btn-auth-submit" id="btnSaveAddress" style="margin-top:8px;">
-              Save Delivery Details
-            </button>
-          </form>
-        </div>
+<button type="button" class="btn-customer-logout" onclick="handleCustomerLogout()">
+<i data-lucide="log-out" style="width:16px; height:16px;"></i>
+<span>Sign Out</span>
+</button>
+</div>
+</div>
+</aside>
 
-        <!-- 2. My Orders Tab -->
-        <div id="accOrdersPanel" class="acc-panel" style="display: none;">
-          <div id="customerOrdersList" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
-            <div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.85rem;">
-              Loading orders...
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="btn-customer-logout" onclick="handleCustomerLogout()">
-          <i data-lucide="log-out" style="width:16px; height:16px;"></i>
-          <span>Sign Out</span>
-        </button>
-      </div>
-    </div>
-  </aside>
-  
-<!-- Toast -->
+<!-- Toast Notice -->
 <div class="toast" id="toastNotice">Item added to your shopping bag!</div>
 
 <!-- Application Logic -->
